@@ -1,0 +1,13 @@
+🎉 feat[scope]: new feature
+🛠️ fix[scope]: bug fix
+📜 docs[scope]: documentation only changes
+🪄 style[scope]: changes do not affect the meaning of the code
+🎊 refactor[scope]: code change that neither fixes a bug nor adds a feature
+✨ perf[scope]: a code change that improves performance
+🔎 test[scope]: add missing or correct existing tests
+🌈 chore[scope]: changes to build process or aux tools and libs such as doc generation
+
+1. details...
+2. details...
+
+# [Each Line should not Exceed 100 Characters]
