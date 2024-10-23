@@ -1,12 +1,18 @@
 [user]
     name = sheer-rey
     email = sheer.rey@gmail.com
+
 [alias]
     lg = log --date-order --graph --pretty=format:'%C(yellow)%h%C(reset) - %C(dim white)%an%C(reset)%C(cyan)(%ar)%C(reset) %s %C(green)%d%C(reset)'
+
 [commit]
     template = /home/sheer-rey/.gitmessage
+
 [core]
     editor = vim
     excludesfile = /home/sheer-rey/.gitignore
     pager = less -S
+
+[color]
+    ui = auto
 
