@@ -1,0 +1,152 @@
+#!/bin/bash
+
+# define font formatting sequence
+## text style (set)
+font_reset="\033[0m"
+font_bold="\033[1m"
+font_dim="\033[2m"
+font_italic="\033[3m"
+font_underline="\033[4m"
+font_blink="\033[5m"
+font_reverse="\033[7m"
+font_hide="\033[8m"
+font_stroke="\033[9m"
+## text style (unset)
+font_nobold="\033[21m"
+font_nodim="\033[22m"
+font_noitalic="\033[23m"
+font_nounderline="\033[24m"
+font_noblink="\033[25m"
+font_noreverse="\033[27m"
+font_nohide="\033[28m"
+font_nostroke="\033[29m"
+## foreground color
+font_black="\033[30m"
+font_red="\033[31m"
+font_green="\033[32m"
+font_yellow="\033[33m"
+font_blue="\033[34m"
+font_magenta="\033[35m"
+font_cyan="\033[36m"
+font_white="\033[37m"
+## background color
+font_bg_black="\033[40m"
+font_bg_red="\033[41m"
+font_bg_green="\033[42m"
+font_bg_yellow="\033[43m"
+font_bg_blue="\033[44m"
+font_bg_magenta="\033[45m"
+font_bg_cyan="\033[46m"
+font_bg_white="\033[47m"
+## foreground color (light)
+font_lightblack="\033[90m"
+font_lightred="\033[91m"
+font_lightgreen="\033[92m"
+font_lightyellow="\033[93m"
+font_lightblue="\033[94m"
+font_lightmagenta="\033[95m"
+font_lightcyan="\033[96m"
+font_lightwhite="\033[97m"
+## background color (light)
+font_bg_lightblack="\033[100m"
+font_bg_lightred="\033[101m"
+font_bg_lightgreen="\033[102m"
+font_bg_lightyellow="\033[103m"
+font_bg_lightblue="\033[104m"
+font_bg_lightmagenta="\033[105m"
+font_bg_lightcyan="\033[106m"
+font_bg_lightwhite="\033[107m"
+
+# checkout if color not supported, and clear predefined colors
+if ! tput setaf 1 &>/dev/null || ! [ -t 1 ] || [ "$TERM" == "dumb" ]; then
+    # color not supported, clear predefined variables
+    for var in $(compgen -v); do
+        if [[ "$var" == font_* ]]; then
+            unset "$var"
+        fi
+    done
+fi
+
+# function definitions
+
+## @brief  parse argument via getopt tool
+##
+## @param  $1  - program name to display in error message while error occured
+## @param  $2  - the short options string pass to getopt tool
+## @param  $3  - the long options string pass to getopt tool
+## @param  ... - argument strings to be parse by getopt tool
+##
+## @return 0   - all arguments has been parsed successfully, and parsed arguments are stored in
+##               'parsed_args' variable
+## @return 1   - getopt tool is missing, in this case, 'parsed_args' variable will be cleared
+## @return 2   - 'sopt' is not specified while getopt tool working with compatible version,
+##               in this case, 'parsed_args' variable will be cleared
+## @return 3   - the version string of getopt tool cannot be recognized,
+##               in this case, 'parsed_args' variable will be cleared
+## @return 4   - some input argument cannot be recognized by getopt tool with 'sopt' and 'lopt',
+##               in this case, parsed arguments will still store in 'parsed_args' variable
+##
+## @global getopt_version - string to indicate getopt tool's version, 'compatible' or 'enhanced'
+## @global parsed_args    - list to indicate all parsed arguments via getopt tool
+function ParseArguments {
+    getopt_version=
+    parsed_args=
+    local name=$1
+    local sopt=$2
+    local lopt=$3
+    shift 3
+
+    # set arguments pass to getopt tool
+    if [ -n "$name" ]; then name=-n$name; else name=-n$0; fi
+    if [ -n "$sopt" ]; then sopt=-o$sopt; fi
+    if [ -n "$lopt" ]; then lopt=-l$lopt; fi
+
+    # checkout if getopt tool exist and its version
+    unset GETOPT_COMPATIBLE
+    unset POSIXLY_CORRECT
+    getopt -T >& /dev/null
+    local ret=$?
+    if [ $ret -eq 0 ]; then
+        getopt_version="compatible"
+    elif [ $ret -eq 4 ]; then
+        getopt_version="enhanced"
+    else
+        echo -e "${font_red}Error:${font_reset} missing getopt tool, please install it first!" >&2
+        parsed_args=""
+        return 1
+    fi
+    echo -e "${font_yellow}Info:${font_reset} getopt tool with $getopt_version version."
+
+    # parse arguments
+    if [ $getopt_version = "enhanced" ]; then
+        parsed_args=$(getopt $name $sopt $lopt -- "$@" 2>&1)
+        ret=$?
+    elif [ $getopt_version = "compatible" ]; then
+        if [ -z "$sopt" ]; then
+            echo -e "${font_red}Error:${font_reset} short options must be specified" \
+                    "while getopt tool working in $getopt_version version!" >&2
+            parsed_args=""
+            return 2
+        fi
+        parsed_args=$(getopt ${sopt:2} "$@" 2>&1)
+        ret=$?
+    else
+        echo -e "${font_red}Error:${font_reset}" \
+                "unrecognized getopt version string($getopt_version)!" >&2
+        parsed_args=""
+        return 3
+    fi
+
+    if [ $ret -ne 0 ]; then
+        # extract first error line, in order to handle multi-line output when error occurs
+        # in parsing argument via getopt tool
+        echo -e "${font_red}Error:${font_reset}" \
+                "$(echo "$parsed_args" | head -n 1 | sed s/getopt/${name:2}/g)" >&2
+        parsed_args=$(echo "$parsed_args" | tail -n 1)
+        return 4
+    fi
+
+    return 0
+}
+
+

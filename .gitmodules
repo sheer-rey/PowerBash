@@ -1,3 +1,42 @@
-[submodule "PowerVim"]
-	path = PowerVim
-	url = https://github.com/sheer-rey/PowerVim.git
+[submodule "HOME/.vim/bundle/a.vim"]
+	path = HOME/.vim/bundle/a.vim
+	url = https://github.com/vim-scripts/a.vim
+[submodule "HOME/.vim/bundle/minibufexpl.vim"]
+	path = HOME/.vim/bundle/minibufexpl.vim
+	url = https://github.com/fholgado/minibufexpl.vim
+[submodule "HOME/.vim/bundle/nerdtree-git-plugin"]
+	path = HOME/.vim/bundle/nerdtree-git-plugin
+	url = https://github.com/Xuyuanp/nerdtree-git-plugin.git
+[submodule "HOME/.vim/bundle/rainbow"]
+	path = HOME/.vim/bundle/rainbow
+	url = https://github.com/luochen1990/rainbow
+[submodule "HOME/.vim/bundle/taglist.vim"]
+	path = HOME/.vim/bundle/taglist.vim
+	url = https://github.com/vim-scripts/taglist.vim
+[submodule "HOME/.vim/bundle/lightline.vim"]
+	path = HOME/.vim/bundle/lightline.vim
+	url = https://github.com/itchyny/lightline.vim
+[submodule "HOME/.vim/bundle/vim-gitbranch"]
+	path = HOME/.vim/bundle/vim-gitbranch
+	url = https://github.com/itchyny/vim-gitbranch.git
+[submodule "HOME/.vim/bundle/ack.vim"]
+	path = HOME/.vim/bundle/ack.vim
+	url = https://github.com/mileszs/ack.vim
+[submodule "HOME/.vim/bundle/AutoComplPop"]
+	path = HOME/.vim/bundle/AutoComplPop
+	url = https://github.com/vim-scripts/AutoComplPop
+[submodule "HOME/.vim/bundle/vim-gitgutter"]
+	path = HOME/.vim/bundle/vim-gitgutter
+	url = https://github.com/airblade/vim-gitgutter
+[submodule "HOME/.vim/bundle/nerdtree"]
+	path = HOME/.vim/bundle/nerdtree
+	url = https://github.com/preservim/nerdtree.git
+[submodule "HOME/.vim/bundle/vim-commentary"]
+	path = HOME/.vim/bundle/vim-commentary
+	url = https://github.com/joom/vim-commentary
+[submodule "HOME/.vim/bundle/auto-pairs"]
+	path = HOME/.vim/bundle/auto-pairs
+	url = https://github.com/jiangmiao/auto-pairs
+[submodule "HOME/.vim/bundle/leaderf"]
+	path = HOME/.vim/bundle/leaderf
+	url = https://github.com/yggdroot/leaderf

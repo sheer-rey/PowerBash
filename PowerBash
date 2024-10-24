@@ -1,0 +1,353 @@
+#!/bin/bash
+
+# root directory of PowerBash project
+powerbash_root=$(dirname $(realpath ${BASH_SOURCE[0]}))
+
+# load predefined variables and functions
+source ${powerbash_root}/predefined
+
+# current time for backup suffix
+current_time=$(date +"%Y%m%d%H%M%S")
+
+# source statement
+bashrc_file=$HOME/.bashrc
+source_comment_begin='# POWERBASH BEGIN, DO NOT MODIFY THIS BLOCK!'
+source_comment_end='# POWERBASH END, DO NOT MODIFY THIS BLOCK!'
+
+# predefined variables
+install_path=
+uninstall_path=
+install_archive=
+install_force=0
+backup_dir=".PowerBashBackup"
+backup_prefix="powerbash-"
+backup_suffix=".tar.gz"
+backup_file="$backup_prefix$current_time$backup_suffix"
+backup_pattern='^powerbash-[0-9]+\.tar\.gz$'
+files=(
+    ".powerbashrc"
+    ".vimrc"
+    ".gitconfig"
+    ".gitignore"
+    ".gitmessage"
+)
+dirs=(
+    ".vim"
+)
+
+# predefined options for PowerBash
+sopt="hfi::u::a:"
+lopt="help,force,install::,uninstall::,archive:"
+
+# predefined functions for PowerBash
+function PrintHelp {
+    cat <<!
+Usage: $(basename ${BASH_SOURCE[0]}) [option] ...
+Used for PowerBash package management(install, uninstall, etc.).
+
+Options:
+  -i, --install [path]      Install PowerBash package into specified [path].
+                            If it has been already installed in specified path,
+                            previous package files will archived to file with
+                            prefix '$backup_prefix' in '[path]/$backup_dir'.
+                            If [path] has not been specified, install to \$HOME
+                            by default.
+  -u, --uninstall [path]    Uninstall PowerBash package from specified [path].
+                            If [path] has not been specified, uninstall from
+                            \$HOME by default.
+  -a, --archive <file>      Only valid with -i/--install option. Used to install
+                            PowerBash package with specified archive <file>
+                            instead of original one.
+  -f, --force               Only valid with -i/--install option. Used to overwrite
+                            existing PowerBash package files instead of archive.
+
+  -h, --help                Print this help message and exit.
+!
+}
+
+function PrintHelpCompatible {
+    cat <<!
+Usage: $(basename ${BASH_SOURCE[0]}) [option] ...
+Used for PowerBash package management(install, uninstall, etc.).
+
+Options:
+  -i [path]     Install PowerBash package into specified [path]. If it has been
+                already installed in specified path, previous package files will
+                archived to file with prefix '$backup_prefix' in '[path]/$backup_dir'.
+                If [path] has not been specified, install to \$HOME by default.
+  -u [path]     Uninstall PowerBash package from specified [path].
+                If [path] has not been specified, uninstall from \$HOME by default.
+  -a <file>     Only valid with -i option. Used to install PowerBash package with
+                specified archive <file> instead of original one.
+  -f            Only valid with -i option. Used to overwrite existing PowerBash
+                package files instead of archive.
+
+  -h            Print this help message and exit.
+!
+}
+
+function DoInstall {
+    # authority check for $install_path
+    echo -e "${font_magenta}Checking authority for installation directory ...${font_reset}"
+    if ! [ -r "$install_path" ] || ! [ -w "$install_path" ] || ! [ -x "$install_path" ]; then
+        echo -e "${font_red}Error:${font_reset} $install_path not accessble," \
+                "install canceled!" >&2
+        exit 2
+    fi
+
+    # check and backup previous configuration
+    if [ $install_force -ne 1 ]; then
+        echo -e "${font_magenta}Checking authority for backup directory ...${font_reset}"
+        if [ -e "$install_path/$backup_dir" ]; then
+            if ! [ -d "$install_path/$backup_dir" ]; then
+                echo -e "${font_red}Error:${font_reset} $install_path/$backup_dir existing" \
+                        "but not a directory, install canceled!" >&2
+                exit 2
+            elif ! [ -w "$install_path/$backup_dir" ]; then
+                echo -e "${font_red}Error:${font_reset} $install_path/$backup_dir existing" \
+                        "but not writeable, install canceled!" >&2
+                exit 2
+            fi
+        else
+            mkdir -p "$install_path/$backup_dir"
+        fi
+
+        echo -e "${font_magenta}Looking for existing configurations ...${font_reset}"
+        local temp_dir=$(mktemp -d)
+        for file in ${files[@]}; do
+            if [ -f "$install_path/$file" ]; then
+                echo -e "${font_yellow}Found file $install_path/$file${font_reset}"
+                cp "$install_path/$file" $temp_dir/
+            fi
+        done
+        for dir in ${dirs[@]}; do
+            if [ -d "$install_path/$dir" ]; then
+                echo -e "${font_yellow}Found directory $install_path/$dir${font_reset}"
+                cp -r "$install_path/$dir" $temp_dir/
+            fi
+        done
+
+        if [ -z "$(ls -A $temp_dir)" ]; then
+            echo -e "${font_yellow}No existing configurations found${font_reset}"
+        else
+            echo -e "${font_magenta}Backing up existing configurations to" \
+                    "$install_path/$backup_dir/$backup_file ...${font_reset}"
+            tar -czf "$install_path/$backup_dir/$backup_file" -C $temp_dir $(ls -A $temp_dir)
+        fi
+        rm -rf $temp_dir
+    fi
+
+    # install PowerBash from $install_archive
+    if [ -n "$install_archive" ]; then
+        echo -e "${font_magenta}Checking authority for archive file ...${font_reset}"
+        if ! [ -e "$install_archive" ]; then
+            echo -e "${font_red}Error:${font_reset} specified archive file $install_archive" \
+                    "not exist, install canceled!" >&2
+            exit 2
+        fi
+        if ! [ -r "$install_archive" ]; then
+            echo -e "${font_red}Error:${font_reset} specified archive file $install_archive" \
+                    "is not accessble, install canceled!" >&2
+            exit 2
+        fi
+
+        echo -e "${font_magenta}Checking validity for archive file ...${font_reset}"
+        if ! [[ "$(basename "$install_archive")" =~ $backup_pattern ]] || \
+           ! tar -tzf "$install_archive" >&/dev/null; then
+            echo -e "${font_red}Error:${font_reset} specified archive file $install_archive" \
+                    "is not valid, install canceled!" >&2
+            exit 2
+        fi
+        local temp_dir=$(mktemp -d)
+        tar -xzf "$install_archive" -C $temp_dir >&/dev/null
+        for file in ${files[@]}; do
+            if ! [ -e "$temp_dir/$file" ]; then
+                echo -e "${font_red}Error:${font_reset} specified archive file $install_archive" \
+                        "is not valid, install canceled!" >&2
+                rm -rf $temp_dir
+                exit 2
+            fi
+        done
+        for dir in ${dirs[@]}; do
+            if ! [ -e "$temp_dir/$dir" ]; then
+                echo -e "${font_red}Error:${font_reset} specified archive file $install_archive" \
+                        "is not valid, install canceled!" >&2
+                rm -rf $temp_dir
+                exit 2
+            fi
+        done
+    fi
+
+    # install PowerBash configurations
+    echo -e "${font_green}Start to install PowerBash ...${font_reset}"
+    local powerbash_src_dir=
+    if [ -n "$install_archive" ]; then
+        powerbash_src_dir="$temp_dir"
+    else
+        powerbash_src_dir="$powerbash_root/HOME"
+    fi
+    for file in ${files[@]}; do
+        rm -f "$install_path/$file"
+        cp -f "$powerbash_src_dir/$file" "$install_path/"
+    done
+    for dir in ${dirs[@]}; do
+        rm -rf "$install_path/$dir"
+        cp -rf "$powerbash_src_dir/$dir" "$install_path/"
+    done
+
+    # check and append 'source .powerbashrc' statement
+    sed -i "/$source_comment_begin/,/$source_comment_end/d" $bashrc_file
+    echo "" >> $bashrc_file
+    echo "$source_comment_begin" >> $bashrc_file
+    echo "source $install_path/.powerbashrc" >> $bashrc_file
+    echo "$source_comment_end" >> $bashrc_file
+
+    # remove temp files while install PowerBash from $install_archive
+    if [ -n "$install_archive" ]; then rm -rf $temp_dir; fi
+
+    # print character picture message
+    echo -ne "${font_cyan}"
+    echo " __________________          "
+    echo "< Enjoy PowerBash! >         "
+    echo " ------------------          "
+    echo "        \   ^__^             "
+    echo "         \  (oo)\_______     "
+    echo "            (__)\       )\/\ "
+    echo "                ||----w |    "
+    echo "                ||     ||    "
+    echo -e "${font_reset}"
+}
+
+function DoUninstall {
+    # authority check for $uninstall_path
+    echo -e "${font_magenta}Checking authority for uninstallation directory ...${font_reset}"
+    if ! [ -r "$uninstall_path" ] || ! [ -w "$uninstall_path" ] || ! [ -x "$uninstall_path" ]; then
+        echo -e "${font_red}Error:${font_reset} $uninstall_path not accessble," \
+                "install canceled!" >&2
+        exit 3
+    fi
+
+    # check PowerBash configuration
+    echo -e "${font_magenta}Looking for existing configurations ...${font_reset}"
+    local conf_list=
+    local conf_index=0
+    for file in ${files[@]}; do
+        if [ -f "$uninstall_path/$file" ]; then
+            echo -e "${font_yellow}Found file $uninstall_path/$file${font_reset}"
+            conf_list[$conf_index]="$uninstall_path/$file"
+            let conf_index++
+        fi
+    done
+    for dir in ${dirs[@]}; do
+        if [ -d "$uninstall_path/$dir" ]; then
+            echo -e "${font_yellow}Found directory $uninstall_path/$dir${font_reset}"
+            conf_list[$conf_index]="$uninstall_path/$dir"
+            let conf_index++
+        fi
+    done
+
+    # remove PowerBash configuration
+    echo -e "${font_green}Start to uninstall PowerBash ...${font_reset}"
+    rm -rf "${conf_list[@]}"
+
+    # check and remove 'source .powerbashrc' statement
+    sed -i "/$source_comment_begin/,/$source_comment_end/d" $bashrc_file
+
+    # print character picture message
+    echo -ne "${font_cyan}"
+    echo " ____________________        "
+    echo "< Goodbye PowerBash! >       "
+    echo " --------------------        "
+    echo "        \   ^__^             "
+    echo "         \  (xx)\_______     "
+    echo "            (__)\       )\/\ "
+    echo "                ||----w |    "
+    echo "                ||     ||    "
+    echo -e "${font_reset}"
+}
+
+# main body
+
+## check options for PowerBash
+ParseArguments $(basename ${BASH_SOURCE[0]}) $sopt $lopt "$@"
+if [ $? -ne 0 ]; then exit 1; fi
+eval set -- "$parsed_args"
+
+## iterate options
+while true; do
+    case "$1" in
+        "-i" | "--install")
+            if [ -n "$2" ] && [ ${2:0:1} == "-" ]; then
+                install_path=$HOME
+                shift 1
+            else
+                install_path=$2
+                if [ -z "$install_path" ]; then install_path=$HOME; fi
+                shift 2
+            fi
+        ;;
+        "-u" | "--uninstall")
+            if [ -n "$2" ] && [ ${2:0:1} == "-" ]; then
+                uninstall_path=$HOME
+                shift 1
+            else
+                uninstall_path=$2
+                if [ -z "$uninstall_path" ]; then uninstall_path=$HOME; fi
+                shift 2
+            fi
+        ;;
+        "-a" | "--archive")
+            install_archive=$2
+            shift 2
+        ;;
+        "-f" | "--force")
+            install_force=1
+            shift 1
+        ;;
+        "-h" | "--help")
+            if [ $getopt_version = "enhanced" ]; then
+                PrintHelp
+            elif [ $getopt_version = "compatible" ]; then
+                PrintHelpCompatible
+            else
+                echo -e "${font_red}Error:${font_reset}" \
+                        "unrecognized getopt version string($getopt_version)!" >&2
+                exit 1
+            fi
+            exit 0
+        ;;
+        "--")
+            if [ $# -gt 1 ]; then
+                echo -e "${font_red}Error:${font_reset} unrecognized argument $2!" >&2
+                exit 1
+            fi
+            break
+        ;;
+        *)
+            echo -e "${font_red}Error:${font_reset} unrecognized option $1!" >&2
+            exit 1
+        ;;
+    esac
+done
+
+## option confilict check
+if [ -n "$uninstall_path" ]; then
+    if [ -n "$install_path" ]; then
+        echo -e "${font_red}Error:${font_reset} the install and uninstall options cannot" \
+                "specified at the same time!" >&2
+        exit 1
+    elif [ -n "$install_archive" ]; then
+        echo -e "${font_red}Error:${font_reset} the archive and uninstall options cannot" \
+                "specified at the same time!" >&2
+        exit 1
+    elif [ $install_force -eq 1 ]; then
+        echo -e "${font_red}Error:${font_reset} the force and uninstall options cannot" \
+                "specified at the same time!" >&2
+        exit 1
+    fi
+fi
+
+## do options
+if [ -n "$install_path" ]; then DoInstall; fi
+if [ -n "$uninstall_path" ]; then DoUninstall; fi
+

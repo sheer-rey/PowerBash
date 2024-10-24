@@ -6,12 +6,12 @@
 
 # check and display git branches
 function git_branch {
-    branch="`git branch --no-color 2>/dev/null | grep "^\*" | sed -e "s/^\*\ //"`"
+    branch="$(git branch --no-color 2>/dev/null | grep '^\*' | sed -e 's/^\*\ //' | tr -d '()')"
     if [ "${branch}" != "" ]; then
-        if [ "${branch}" = "(no branch)" ]; then
-            branch="(`git rev-parse --short HEAD`...)"
+        if [ "${branch}" = "no branch" ]; then
+            branch="⎇  Hash $(git rev-parse --short HEAD)"
         fi
-        echo "($branch)"
+        echo "⎇  $branch"
     fi
 }
 
@@ -22,6 +22,86 @@ function check_root {
     else
         echo "$"
     fi
+}
+
+# Yank to remote terminal via osc52 escape sequence.
+function osc_yank {
+    local func_name="osc_yank"
+    local osc52_prefix="\033]52;c;"
+    local osc52_suffix="\a"
+    local max_lenth=74994
+    local text=
+    local lenth=
+
+    local sopt=
+    local lopt=
+    local help_msg=$(cat <<!
+Usage: $osc_yank [OPTION] [FILE] ...
+Read from FILE or STDIN and yank to remote terminal via osc52 escape sequence.
+
+Options:
+    -h, --help      Show this message and exit.
+
+Only supported in xterm now.
+
+With no FILE supplied, read from standard input. If supplied FILE is a text file
+and readable, read its content, otherwise read the value itself.
+
+Using environment variable OSC_YANK_LENTH_MAX to specify the max character lenth
+to be yank, default value is 74994.
+!
+)
+
+    # check and show help message
+    if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+        echo "$help_msg"
+        return 0
+    fi
+
+    # check terminal type
+    if [[ "$TERM" != xterm* ]]; then
+        echo "osc_yank only supported in xterm now!"
+        return 1
+    fi
+
+    # check environment variable
+    if [ -n $OSC_YANK_LENTH_MAX ] && [[ "$OSC_YANK_LENTH_MAX" =~ ^[0-9]+$ ]]; then
+        max_lenth=$OSC_YANK_LENTH_MAX
+    fi
+
+    # check input arguments
+    if [ $# -gt 0 ]; then
+        # if osc_yank has input arguments, iterate all of them
+        for arg in "$@"; do
+            # if input argument specified a readable text file,
+            # read its content, otherwise read the value itself
+            if file -- "$arg" | grep text >&/dev/null && [ -r "$arg" ]; then
+                text+=$(cat "$arg")$'\n'
+            else
+                text+="$arg"$'\n'
+            fi
+        done
+    else
+        # if osc_yank has no input argument, read text from stdin, Ctrl+D to send eof
+        local old_ifs=$IFS
+        while IFS= read -r line; do
+            text+="$line"$'\n'
+        done
+        IFS=$old_ifs
+    fi
+
+    # truncate multiple '\n' in the tail of variable 'text'
+    text=$(echo "$text" | sed ':a;N;$!ba;s/\n\{2,\}$/\n/')
+
+    # calculate text lenth and check overflow
+    lenth=$(echo "$text" | wc -c)
+    if [ $lenth -gt $max_lenth ]; then
+        echo "text lenth($lenth) exceeds the maximum limit($max_lenth)!"
+        return 2
+    fi
+
+    # encode text and send osc52 escape sequence to remote termial
+    echo -ne "${osc52_prefix}$(echo "$text" | base64 | tr -d '\r\n')${osc52_suffix}"
 }
 
 # main body
@@ -39,7 +119,7 @@ HISTCONTROL=ignoreboth
 # append to the history file, don't overwrite it
 shopt -s histappend
 
-# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+# for setting history lenth see HISTSIZE and HISTFILESIZE in bash(1)
 HISTSIZE=1000
 HISTFILESIZE=2000
 
@@ -144,7 +224,10 @@ if ! shopt -oq posix; then
     fi
 fi
 
-# User specific settings
+# export functions or variables
+export -f osc_yank
 export VISUAL=vim
 export EDITOR=vim
+
+# User specific settings
 
