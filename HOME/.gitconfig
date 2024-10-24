@@ -4,13 +4,15 @@
 
 [alias]
     lg = log --date-order --graph --pretty=format:'%C(yellow)%h%C(reset) - %C(dim white)%an%C(reset)%C(cyan)(%ar)%C(reset) %s %C(green)%d%C(reset)'
+    spush = push --recurse-submodules=on-demand
+    supdate = submodule update --remote --merge
 
 [commit]
-    template = /home/sheer-rey/.gitmessage
+    template = ~/.gitmessage
 
 [core]
+    excludesfile = ~/.gitignore
     editor = vim
-    excludesfile = /home/sheer-rey/.gitignore
     pager = less -S
 
 [color]

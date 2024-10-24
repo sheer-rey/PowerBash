@@ -1,3 +1,4 @@
 [submodule "PowerVim"]
 	path = PowerVim
 	url = https://github.com/sheer-rey/PowerVim.git
+	branch = master
