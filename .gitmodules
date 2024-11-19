@@ -28,6 +28,7 @@
 [submodule "HOME/.vim/bundle/vim-gitgutter"]
 	path = HOME/.vim/bundle/vim-gitgutter
 	url = https://github.com/airblade/vim-gitgutter
+	branch = main
 [submodule "HOME/.vim/bundle/nerdtree"]
 	path = HOME/.vim/bundle/nerdtree
 	url = https://github.com/preservim/nerdtree.git
@@ -40,3 +41,9 @@
 [submodule "HOME/.vim/bundle/leaderf"]
 	path = HOME/.vim/bundle/leaderf
 	url = https://github.com/yggdroot/leaderf
+[submodule "HOME/.vim/bundle/OmniCppComplete"]
+	path = HOME/.vim/bundle/OmniCppComplete
+	url = https://github.com/vim-scripts/OmniCppComplete
+[submodule "HOME/.vim/bundle/vim-polyglot"]
+	path = HOME/.vim/bundle/vim-polyglot
+	url = https://github.com/sheerun/vim-polyglot.git

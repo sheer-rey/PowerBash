@@ -4,6 +4,9 @@ execute pathogen#infect()
 " set colorscheme
 colorscheme Monokai_Gavin
 
+" enable syntax highlighting and keep most of current color settings
+syntax enable
+
 " turn on filetype detect and enable loading relevant plugin and indent file
 filetype on
 filetype plugin on
@@ -42,6 +45,8 @@ set modelines=5                 " set the count of valid vim modelines
 set colorcolumn=100             " highlighting 100th coloum for auxiliary
 set laststatus=2                " set windows always have the status line
 set noshowmode                  " do not show Insert/Replace/Visual mode on the last line
+set cursorline                  " highlight the text line of the cursor
+set csqf=s-,c-,d-,i-,t-,e-      " show cscope results in quickfix window (cscopequickfix)
 
 " vim built-in settings for character encoding
 set encoding=utf-8              " set encoding for vim internal use
@@ -63,26 +68,28 @@ nmap <Leader>s :Sexplore<CR>
 "" vertical split current window and explore current file's directory
 nmap <Leader>v :Vexplore<CR>
 
-
 " settings for plugins
 "" settings for NERDTree plugin and sub-plugins
 let NERDTreeWinPos = "left"     " set NERDTree window position to left
 let NERDTreeShowHidden = 1      " set NERDTree window show hidden files
 """ close the tab if NERDTree is the only window remaining in it.
-autocmd BufEnter * if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
+if has("autocmd")
+    autocmd BufEnter *
+    \   if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
+endif
 """ key map for toggle NERDTree window
-nnoremap <silent> <leader>n :NERDTreeToggle<CR> 
+nnoremap <leader>n :NERDTreeToggle<CR> 
 """ set git status indicator for NERDtree-git-plugin
 let g:NERDTreeGitStatusIndicatorMapCustom = {
-    \   'Modified'  :'✹',
-    \   'Staged'    :'✚',
-    \   'Untracked' :'✭',
-    \   'Renamed'   :'➜',
-    \   'Unmerged'  :'═',
-    \   'Deleted'   :'✖',
-    \   'Dirty'     :'✗',
-    \   'Ignored'   :'☒',
-    \   'Clean'     :'✔︎',
+    \   'Modified'  :'~',
+    \   'Staged'    :'+',
+    \   'Untracked' :'«',
+    \   'Renamed'   :'→',
+    \   'Unmerged'  :'!',
+    \   'Deleted'   :'x',
+    \   'Dirty'     :'*',
+    \   'Ignored'   :'…',
+    \   'Clean'     :'✓',
     \   'Unknown'   :'?',
     \}
 
@@ -95,7 +102,11 @@ nmap <Leader>a :A<CR>
 
 "" settings for lightline plugin
 function GitBranch()
-    return '⎇  ' . gitbranch#name()
+    let l:branch = gitbranch#name()
+    if empty(l:branch)
+        return ''
+    endif
+    return '⎇  ' . l:branch
 endfunction
 let g:lightline = {
     \   'colorscheme': 'wombat',
@@ -118,13 +129,45 @@ let g:lightline = {
     \   },
     \}
 
+"" settings for taglist.vim plugin
+let Tlist_Inc_Winwidth = 0              " disable auto increase window width to accommodate taglist
+let Tlist_Use_Right_Window = 1          " place the taglist window on the right side
+let Tlist_File_Fold_Auto_Close = 1      " auto close the tags tree for inactive files
+let Tlist_GainFocus_On_ToggleOpen = 1   " move the cursor to the taglist window when it opened
+let Tlist_Exit_OnlyWindow = 1           " exit vim if the taglist is the only window
+""" key map for toggle taglist window
+nnoremap <Leader>m :TlistToggle<CR> 
 
+"" settings for ack.vim plugin
+let g:ackhighlight = 1                      " highlight searched term in quickview window
+let g:ack_qhandler = "botright copen 15"    " command to open quickview window with 15 lines height
 
+"" settings for OmniCppComplete plugin
+set omnifunc=omni#cpp#complete
+let OmniCpp_MayCompleteDot      = 1 " enable completion after .
+let OmniCpp_MayCompleteArrow    = 1 " enable completion after ->
+let OmniCpp_MayCompleteScope    = 1 " enable completion after ::
+let OmniCpp_NamespaceSearch     = 1 " enable searching symbols in namespace scope
+let OmniCpp_GlobalScopeSearch   = 1 " enable searching symbols in global scope
+let OmniCpp_DefaultNamespace    = ["std"]   " set default namespace to 'std'
+let OmniCpp_ShowPrototypeInAbbr = 1 " show function prototypes in completion list
+let OmniCpp_SelectFirstItem     = 2 " automatically select the first result in completion list
 
-
-
-
-
+" register auto commands
+if has("autocmd")
+    "" let cursor return to the position before the file closed when it's reopened
+    autocmd BufReadPost *
+    \   if line("'\"") > 0 && line("$") > 1 && line ("'\"") <= line("$") |
+    \       execute "normal! g'\"" |
+    \   endif
+    "" set local current directory to the parent directory of current buffer file
+    autocmd BufEnter * silent! lcd %:p:h
+    "" set commentstring to '// ' for c++ files
+    autocmd FileType cpp set commentstring=//\ %s
+    "" add keywords list to dictionary of current buffer for c++ files
+    autocmd FileType cpp execute 'setlocal dictionary+=' .
+    \   expand(fnamemodify($MYVIMRC, ':h') . '/.vim/dictionary/cpp_keywords_list.txt')
+endif
 
 " support yank to remote terminal via osc52 escape sequence
 function OscYank()
@@ -137,87 +180,5 @@ function OscYank()
         call writefile([osc52_seq], '/dev/fd/2', 'b')
     endif
 endfunction
-nnoremap <Leader>oy :call OscYank()<CR>
-
-
-
-
-
-
-
-
-
-
-"高亮搜索关键词"
-let g:ackhighlight = 1
-"修改快速预览窗口高度为15
-let g:ack_qhandler = "botright copen 15"
-
-let curpwd = getcwd()
-
-" ack搜索时不打开第一个搜索文件
-map <Leader>fw :Ack! <Space>
-" AckFile不打开第一个搜索文件
-map <Leader>ff :AckFile!<Space>
-
-
-" 使用TlistToggle查看文件函数列表。设置快捷键：<F12>
-nnoremap  <Leader>m  :TlistToggle <CR> 
-" 粘贴到系统剪切板
-map <Leader>y "*y
-"禁止自动改变当前Vim窗口的大小
-let Tlist_Inc_Winwidth=0
-"把方法列表放在屏幕的右侧
-let Tlist_Use_Right_Window=1
-"让当前不被编辑的文件的方法列表自动折叠起来
-let Tlist_File_Fold_Auto_Close=1 
-" let g:winManagerWindowLayout='FileExplorer'
-" 定义快捷键 打开/关闭 winmanger
-" nmap wm :WMToggle<cr>
-" let g:winManagerWidth=20
-
-" 取消补全内容以分割子窗口形式出现，只显示补全列表
-
-"cs add $curpwd/cscope.out $curpwd/
-let g:SuperTabRetainCompletionType=2
-let g:SuperTabDefaultCompletionType="<C-X><C-O>"
-set cscopequickfix=s-,c-,d-,i-,t-,e-
-
-
-
-let cwd=""
-
-"设置winmanager窗口宽度
-"let g:winManagerWidth = 30 
-
-" 重新打开文档时光标回到文档关闭前的位置
-if has("autocmd")
- autocmd BufReadPost *
- \ if line("'\"") > 0 && line ("'\"") <= line("$") |
- \ exe "normal g'\"" |
-\ endif
-endif
-
-
-autocmd InsertEnter * se cul    " 用浅色高亮当前行"
-
-" vim-commentary style set 注释针对不同语言的注释方法
-autocmd FileType cpp set commentstring=//\ %s
-" 开启语义分析
-syntax enable
-syntax on
-
-" 添加自动补全字典
-au FileType cpp setlocal dict+=~/.vim/dict/cpp_keywords_list.txt
-
-
-autocmd BufEnter * silent! lcd %:p:h
-let OmniCpp_MayCompleteDot=1    "  打开  . 操作符
-let OmniCpp_MayCompleteArrow=1  " 打开 -> 操作符
-let OmniCpp_MayCompleteScope=1  " 打开 :: 操作符
-let OmniCpp_NamespaceSearch=1   " 打开命名空间
-let OmniCpp_GlobalScopeSearch=1  
-let OmniCpp_DefaultNamespace=["std"]  
-let OmniCpp_ShowPrototypeInAbbr=1  " 打开显示函数原型
-let OmniCpp_SelectFirstItem = 2 " 自动弹出时自动跳至第一个
+nnoremap <Leader>y :call OscYank()<CR>
 

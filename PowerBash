@@ -205,6 +205,12 @@ function DoInstall {
     # remove temp files while install PowerBash from $install_archive
     if [ -n "$install_archive" ]; then rm -rf $temp_dir; fi
 
+    # remove vim plugin 'nerdtree-git-plugin' for compatibility while vim version less than 8.1
+    local vim_version=$(vim --version 2>&1 | grep -oP '(?<=VIM - Vi IMproved )\d+\.\d+(?= \()')
+    if [ -z "$vim_version" ] || [[ "$vim_version" < "8.1" ]]; then
+        rm -rf $install_path/.vim/bundle/nerdtree-git-plugin
+    fi
+
     # print character picture message
     echo -ne "${font_cyan}"
     echo " __________________          "

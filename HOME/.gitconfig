@@ -5,7 +5,7 @@
 [alias]
     lg = log --date-order --graph --pretty=format:'%C(yellow)%h%C(reset) - %C(dim white)%an%C(reset)%C(cyan)(%ar)%C(reset) %s %C(green)%d%C(reset)'
     sclone = clone --recurse-submodules
-    supdate = submodule update --init --remote --merge
+    supdate = submodule update --recursive --init --remote --merge
     sfetch = fetch --recurse-submodules=on-demand
     spush = push --recurse-submodules=on-demand
 
