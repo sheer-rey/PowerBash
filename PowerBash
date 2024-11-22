@@ -205,10 +205,15 @@ function DoInstall {
     # remove temp files while install PowerBash from $install_archive
     if [ -n "$install_archive" ]; then rm -rf $temp_dir; fi
 
-    # remove vim plugin 'nerdtree-git-plugin' for compatibility while vim version less than 8.1
+    # remove ncompatible vim plugin
     local vim_version=$(vim --version 2>&1 | grep -oP '(?<=VIM - Vi IMproved )\d+\.\d+(?= \()')
+    ## vim version 8.1 and above required for pulgin nerdtree-git-plugin
     if [ -z "$vim_version" ] || [[ "$vim_version" < "8.1" ]]; then
         rm -rf $install_path/.vim/bundle/nerdtree-git-plugin
+    fi
+    ## vim version 7.3 and above required for pulgin indentline
+    if [ -z "$vim_version" ] || [[ "$vim_version" < "7.3" ]]; then
+        rm -rf $install_path/.vim/bundle/indentline
     fi
 
     # print character picture message

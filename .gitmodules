@@ -47,3 +47,6 @@
 [submodule "HOME/.vim/bundle/vim-polyglot"]
 	path = HOME/.vim/bundle/vim-polyglot
 	url = https://github.com/sheerun/vim-polyglot.git
+[submodule "HOME/.vim/bundle/indentline"]
+	path = HOME/.vim/bundle/indentline
+	url = https://github.com/yggdroot/indentline
