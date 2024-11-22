@@ -33,7 +33,8 @@ set shiftwidth=4                " set indent size to 4 spaces
 set showmatch                   " turn on matching brackets jumping
 set wildmenu                    " turn on vim enhanced built-in command-line completion
 set noswapfile                  " turn off the swap file
-set completeopt=menuone,preview " set auto-complete properties in insert mode
+set completeopt=menu,menuone,preview,noselect   " set auto-complete properties in insert mode
+set shortmess+=c                " don't show 'ins-completion-menu' messages
 set nofoldenable                " not fold any text while file was opened
 set ignorecase                  " set case-insensitive in search patterns
 set smartcase                   " turn on case-sensitive while upper case exist in search patterns
@@ -139,8 +140,10 @@ let Tlist_Exit_OnlyWindow = 1           " exit vim if the taglist is the only wi
 nnoremap <Leader>m :TlistToggle<CR> 
 
 "" settings for ack.vim plugin
-let g:ackhighlight = 1                      " highlight searched term in quickview window
-let g:ack_qhandler = "botright copen 15"    " command to open quickview window with 15 lines height
+let g:ackprg              = "ag --vimgrep"      " use 'ag' for searching instead of ack
+let g:ack_apply_qmappings = 1                   " enable internal key mappings in quickfix window
+let g:ackhighlight        = 1                   " highlight searched term in quickview window
+let g:ack_qhandler        = "botright copen 15" " open quickview window with 15 lines height
 
 "" settings for OmniCppComplete plugin
 set omnifunc=omni#cpp#complete
@@ -152,6 +155,10 @@ let OmniCpp_GlobalScopeSearch   = 1 " enable searching symbols in global scope
 let OmniCpp_DefaultNamespace    = ["std"]   " set default namespace to 'std'
 let OmniCpp_ShowPrototypeInAbbr = 1 " show function prototypes in completion list
 let OmniCpp_SelectFirstItem     = 2 " automatically select the first result in completion list
+
+"" settings for vim-auto-popmenu plugin
+let g:apc_enable_ft = {'*':1}       " enable this plugin for all filetypes
+let g:apc_cr_confirm = 1            " use <CR> to confirm the selection
 
 " register auto commands
 if has("autocmd")

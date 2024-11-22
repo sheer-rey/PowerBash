@@ -22,9 +22,6 @@
 [submodule "HOME/.vim/bundle/ack.vim"]
 	path = HOME/.vim/bundle/ack.vim
 	url = https://github.com/mileszs/ack.vim
-[submodule "HOME/.vim/bundle/AutoComplPop"]
-	path = HOME/.vim/bundle/AutoComplPop
-	url = https://github.com/vim-scripts/AutoComplPop
 [submodule "HOME/.vim/bundle/vim-gitgutter"]
 	path = HOME/.vim/bundle/vim-gitgutter
 	url = https://github.com/airblade/vim-gitgutter
@@ -50,3 +47,9 @@
 [submodule "HOME/.vim/bundle/indentline"]
 	path = HOME/.vim/bundle/indentline
 	url = https://github.com/yggdroot/indentline
+[submodule "HOME/.vim/bundle/vim-auto-popmenu"]
+	path = HOME/.vim/bundle/vim-auto-popmenu
+	url = https://github.com/skywind3000/vim-auto-popmenu.git
+[submodule "HOME/.vim/bundle/vim-dict"]
+	path = HOME/.vim/bundle/vim-dict
+	url = https://github.com/skywind3000/vim-dict.git
