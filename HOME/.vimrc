@@ -1,11 +1,14 @@
 " enable pathogen plugin manager
 execute pathogen#infect()
 
-" set colorscheme
-colorscheme Monokai_Gavin
-
 " enable syntax highlighting and keep most of current color settings
 syntax enable
+
+" set colorscheme
+colorscheme dracula
+highlight Normal ctermfg=255 ctermbg=235
+highlight ColorColumn term=reverse ctermbg=238
+highlight Comment cterm=italic ctermfg=244
 
 " turn on filetype detect and enable loading relevant plugin and indent file
 filetype on
@@ -26,7 +29,7 @@ set showcmd	                    " display incomplete commands at bottom right of
 set hlsearch                    " turn on searching highlight
 set incsearch                   " turn on incremental searching
 set nowrap                      " turn off the line wrap while exceed window width
-set langmenu=none               " set vim menu language to english(default)
+set langmenu=none               " set vim menu language to default
 set expandtab                   " use the several spaces while press <Tab> key in insert mode
 set tabstop=4                   " set tab size to 4 spaces
 set shiftwidth=4                " set indent size to 4 spaces
@@ -110,7 +113,7 @@ function GitBranch()
     return '⎇  ' . l:branch
 endfunction
 let g:lightline = {
-    \   'colorscheme': 'wombat',
+    \   'colorscheme': 'dracula',
     \   'active': {
     \       'left': [
     \           [ 'mode', 'paste' ],

@@ -53,3 +53,9 @@
 [submodule "HOME/.vim/bundle/vim-dict"]
 	path = HOME/.vim/bundle/vim-dict
 	url = https://github.com/skywind3000/vim-dict.git
+[submodule "HOME/.vim/bundle/xterm-color-table.vim"]
+	path = HOME/.vim/bundle/xterm-color-table.vim
+	url = https://github.com/guns/xterm-color-table.vim.git
+[submodule "HOME/.vim/bundle/dracula.vim"]
+	path = HOME/.vim/bundle/dracula.vim
+	url = https://github.com/dracula/vim.git
