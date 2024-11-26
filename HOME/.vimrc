@@ -5,10 +5,17 @@ execute pathogen#infect()
 syntax enable
 
 " set colorscheme
+"" disable fetures of dracula colorscheme if terminal not support
+if has('unix')
+    if empty(system('tput sitm 2>/dev/null')) | let g:dracula_italic = 0 | endif
+    if empty(system('tput smxx 2>/dev/null')) | let g:dracula_strikethrough = 0 | endif
+endif
+"" set colorscheme to dracula
 colorscheme dracula
+"" re-define some new highlight rule
 highlight Normal ctermfg=255 ctermbg=235
-highlight ColorColumn term=reverse ctermbg=238
-highlight Comment cterm=italic ctermfg=244
+highlight Comment ctermfg=244 ctermbg=235
+highlight ColorColumn ctermbg=238
 
 " turn on filetype detect and enable loading relevant plugin and indent file
 filetype on
@@ -36,7 +43,6 @@ set shiftwidth=4                " set indent size to 4 spaces
 set showmatch                   " turn on matching brackets jumping
 set wildmenu                    " turn on vim enhanced built-in command-line completion
 set noswapfile                  " turn off the swap file
-set completeopt=menu,menuone,preview,noselect   " set auto-complete properties in insert mode
 set shortmess+=c                " don't show 'ins-completion-menu' messages
 set nofoldenable                " not fold any text while file was opened
 set ignorecase                  " set case-insensitive in search patterns
@@ -51,6 +57,13 @@ set laststatus=2                " set windows always have the status line
 set noshowmode                  " do not show Insert/Replace/Visual mode on the last line
 set cursorline                  " highlight the text line of the cursor
 set csqf=s-,c-,d-,i-,t-,e-      " show cscope results in quickfix window (cscopequickfix)
+"" set auto-complete properties in insert mode
+if v:version > 800
+    " 'noselect' feture only valid with vim version above 8.0
+    set completeopt=menu,menuone,preview,noselect
+else
+    set completeopt=menu,menuone,preview
+endif
 
 " vim built-in settings for character encoding
 set encoding=utf-8              " set encoding for vim internal use
