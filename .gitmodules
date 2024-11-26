@@ -1,61 +1,80 @@
 [submodule "HOME/.vim/bundle/a.vim"]
 	path = HOME/.vim/bundle/a.vim
-	url = https://github.com/vim-scripts/a.vim
+	url = https://github.com/sheer-rey/a.vim.git
+	branch = master
 [submodule "HOME/.vim/bundle/minibufexpl.vim"]
 	path = HOME/.vim/bundle/minibufexpl.vim
-	url = https://github.com/fholgado/minibufexpl.vim
+	url = https://github.com/sheer-rey/minibufexpl.vim.git
+	branch = master
 [submodule "HOME/.vim/bundle/nerdtree-git-plugin"]
 	path = HOME/.vim/bundle/nerdtree-git-plugin
-	url = https://github.com/Xuyuanp/nerdtree-git-plugin.git
+	url = https://github.com/sheer-rey/nerdtree-git-plugin.git
+	branch = master
 [submodule "HOME/.vim/bundle/rainbow"]
 	path = HOME/.vim/bundle/rainbow
-	url = https://github.com/luochen1990/rainbow
+	url = https://github.com/sheer-rey/rainbow.git
+	branch = master
 [submodule "HOME/.vim/bundle/taglist.vim"]
 	path = HOME/.vim/bundle/taglist.vim
-	url = https://github.com/vim-scripts/taglist.vim
+	url = https://github.com/sheer-rey/taglist.vim.git
+	branch = master
 [submodule "HOME/.vim/bundle/lightline.vim"]
 	path = HOME/.vim/bundle/lightline.vim
-	url = https://github.com/itchyny/lightline.vim
+	url = https://github.com/sheer-rey/lightline.vim.git
+	branch = master
 [submodule "HOME/.vim/bundle/vim-gitbranch"]
 	path = HOME/.vim/bundle/vim-gitbranch
-	url = https://github.com/itchyny/vim-gitbranch.git
+	url = https://github.com/sheer-rey/vim-gitbranch.git
+	branch = master
 [submodule "HOME/.vim/bundle/ack.vim"]
 	path = HOME/.vim/bundle/ack.vim
-	url = https://github.com/mileszs/ack.vim
+	url = https://github.com/sheer-rey/ack.vim.git
+	branch = master
 [submodule "HOME/.vim/bundle/vim-gitgutter"]
 	path = HOME/.vim/bundle/vim-gitgutter
-	url = https://github.com/airblade/vim-gitgutter
+	url = https://github.com/sheer-rey/vim-gitgutter.git
 	branch = main
 [submodule "HOME/.vim/bundle/nerdtree"]
 	path = HOME/.vim/bundle/nerdtree
-	url = https://github.com/preservim/nerdtree.git
+	url = https://github.com/sheer-rey/nerdtree.git
+	branch = master
 [submodule "HOME/.vim/bundle/vim-commentary"]
 	path = HOME/.vim/bundle/vim-commentary
-	url = https://github.com/joom/vim-commentary
+	url = https://github.com/sheer-rey/vim-commentary.git
+	branch = master
 [submodule "HOME/.vim/bundle/auto-pairs"]
 	path = HOME/.vim/bundle/auto-pairs
-	url = https://github.com/jiangmiao/auto-pairs
+	url = https://github.com/sheer-rey/auto-pairs.git
+	branch = master
 [submodule "HOME/.vim/bundle/leaderf"]
 	path = HOME/.vim/bundle/leaderf
-	url = https://github.com/yggdroot/leaderf
+	url = https://github.com/sheer-rey/leaderF.git
+	branch = master
 [submodule "HOME/.vim/bundle/OmniCppComplete"]
 	path = HOME/.vim/bundle/OmniCppComplete
-	url = https://github.com/vim-scripts/OmniCppComplete
+	url = https://github.com/sheer-rey/OmniCppComplete.git
+	branch = master
 [submodule "HOME/.vim/bundle/vim-polyglot"]
 	path = HOME/.vim/bundle/vim-polyglot
-	url = https://github.com/sheerun/vim-polyglot.git
+	url = https://github.com/sheer-rey/vim-polyglot.git
+	branch = master
 [submodule "HOME/.vim/bundle/indentline"]
 	path = HOME/.vim/bundle/indentline
-	url = https://github.com/yggdroot/indentline
+	url = https://github.com/sheer-rey/indentLine.git
+	branch = master
 [submodule "HOME/.vim/bundle/vim-auto-popmenu"]
 	path = HOME/.vim/bundle/vim-auto-popmenu
-	url = https://github.com/skywind3000/vim-auto-popmenu.git
+	url = https://github.com/sheer-rey/vim-auto-popmenu.git
+	branch = master
 [submodule "HOME/.vim/bundle/vim-dict"]
 	path = HOME/.vim/bundle/vim-dict
-	url = https://github.com/skywind3000/vim-dict.git
+	url = https://github.com/sheer-rey/vim-dict.git
+	branch = master
 [submodule "HOME/.vim/bundle/xterm-color-table.vim"]
 	path = HOME/.vim/bundle/xterm-color-table.vim
-	url = https://github.com/guns/xterm-color-table.vim.git
+	url = https://github.com/sheer-rey/xterm-color-table.vim.git
+	branch = master
 [submodule "HOME/.vim/bundle/dracula.vim"]
 	path = HOME/.vim/bundle/dracula.vim
-	url = https://github.com/dracula/vim.git
+	url = https://github.com/sheer-rey/dracula.vim.git
+	branch = master
