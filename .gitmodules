@@ -78,3 +78,6 @@
 	path = HOME/.vim/bundle/dracula.vim
 	url = https://github.com/sheer-rey/dracula.vim.git
 	branch = master
+[submodule "HOME/.vim/bundle/vim-cppman"]
+	path = HOME/.vim/bundle/vim-cppman
+	url = https://github.com/sheer-rey/vim-cppman.git

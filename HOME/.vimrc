@@ -1,15 +1,19 @@
+" ================================================================================================ "
 " enable pathogen plugin manager
+" ================================================================================================ "
 execute pathogen#infect()
 
+" ================================================================================================ "
 " enable syntax highlighting and keep most of current color settings
+" ================================================================================================ "
 syntax enable
 
+" ================================================================================================ "
 " set colorscheme
+" ================================================================================================ "
 "" disable fetures of dracula colorscheme if terminal not support
-if has('unix')
-    if empty(system('tput sitm 2>/dev/null')) | let g:dracula_italic = 0 | endif
-    if empty(system('tput smxx 2>/dev/null')) | let g:dracula_strikethrough = 0 | endif
-endif
+if empty(system('tput sitm 2>/dev/null')) | let g:dracula_italic = 0 | endif
+if empty(system('tput smxx 2>/dev/null')) | let g:dracula_strikethrough = 0 | endif
 "" set colorscheme to dracula
 colorscheme dracula
 "" re-define some new highlight rule
@@ -17,12 +21,16 @@ highlight Normal ctermfg=255 ctermbg=235
 highlight Comment ctermfg=244 ctermbg=235
 highlight ColorColumn ctermbg=238
 
+" ================================================================================================ "
 " turn on filetype detect and enable loading relevant plugin and indent file
+" ================================================================================================ "
 filetype on
 filetype plugin on
 filetype indent on
 
+" ================================================================================================ "
 " vim built-in settings
+" ================================================================================================ "
 set nocompatible                " set vim running in nocompatible mode
 set backspace=indent,eol,start  " allow backspacing over everything in insert mode
 set autoindent                  " turn on autoindent
@@ -52,25 +60,27 @@ set tags=tags;/                 " specify tags searching path upward to root(/)
 set shortmess=atToO             " set short message types
 set modeline                    " enable vim modeline
 set modelines=5                 " set the count of valid vim modelines
+set textwidth=100               " set maximum textwidth for break lines automatically
 set colorcolumn=100             " highlighting 100th coloum for auxiliary
 set laststatus=2                " set windows always have the status line
 set noshowmode                  " do not show Insert/Replace/Visual mode on the last line
 set cursorline                  " highlight the text line of the cursor
 set csqf=s-,c-,d-,i-,t-,e-      " show cscope results in quickfix window (cscopequickfix)
 "" set auto-complete properties in insert mode
-if v:version > 800
-    " 'noselect' feture only valid with vim version above 8.0
+if has('patch-7.4.775')
+    " 'noselect' feture of completeopt introduced in vim patch 7.4.775
     set completeopt=menu,menuone,preview,noselect
 else
     set completeopt=menu,menuone,preview
 endif
-
-" vim built-in settings for character encoding
+"" vim built-in settings for character encoding
 set encoding=utf-8              " set encoding for vim internal use
 setglobal fileencoding=utf-8    " set global encoding for new file
 set fileencodings=ucs-bom,utf-8,default,cp936,gb18030,big5,euc-jp,euc-kr,latin1
 
+" ================================================================================================ "
 " define new <Leader> key and key mappings
+" ================================================================================================ "
 let mapleader = ";"
 "" jumping to the window left
 nnoremap <leader>h <C-W><C-H>
@@ -85,37 +95,21 @@ nmap <Leader>s :Sexplore<CR>
 "" vertical split current window and explore current file's directory
 nmap <Leader>v :Vexplore<CR>
 
+" ================================================================================================ "
 " settings for plugins
-"" settings for NERDTree plugin and sub-plugins
-let NERDTreeWinPos = "left"     " set NERDTree window position to left
-let NERDTreeShowHidden = 1      " set NERDTree window show hidden files
-""" close the tab if NERDTree is the only window remaining in it.
-if has("autocmd")
-    autocmd BufEnter *
-    \   if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
-endif
-""" key map for toggle NERDTree window
-nnoremap <leader>n :NERDTreeToggle<CR> 
-""" set git status indicator for NERDtree-git-plugin
-let g:NERDTreeGitStatusIndicatorMapCustom = {
-    \   'Modified'  :'~',
-    \   'Staged'    :'+',
-    \   'Untracked' :'«',
-    \   'Renamed'   :'→',
-    \   'Unmerged'  :'!',
-    \   'Deleted'   :'x',
-    \   'Dirty'     :'*',
-    \   'Ignored'   :'…',
-    \   'Clean'     :'✓',
-    \   'Unknown'   :'?',
-    \}
-
-"" settings for rainbow plugin
-""" enable rainbow plugin by default, set to 0, enable it via :RainbowToggle
-let g:rainbow_active = 1        
-
+" ================================================================================================ "
 "" settings for a.vim plugin
 nmap <Leader>a :A<CR>
+
+"" settings for ack.vim plugin
+let g:ackprg              = "ag --vimgrep"      " use 'ag' for searching instead of ack
+let g:ack_apply_qmappings = 1                   " enable internal key mappings in quickfix window
+let g:ackhighlight        = 1                   " highlight searched term in quickview window
+let g:ack_qhandler        = "botright copen 15" " open quickview window with 15 lines height
+
+"" settings for indentline plugin
+""" for compatible with indentline, vim 7.3 and above required
+if v:version < 703 | let g:indentLine_enabled = 0 | endif
 
 "" settings for lightline plugin
 function GitBranch()
@@ -146,20 +140,31 @@ let g:lightline = {
     \   },
     \}
 
-"" settings for taglist.vim plugin
-let Tlist_Inc_Winwidth = 0              " disable auto increase window width to accommodate taglist
-let Tlist_Use_Right_Window = 1          " place the taglist window on the right side
-let Tlist_File_Fold_Auto_Close = 1      " auto close the tags tree for inactive files
-let Tlist_GainFocus_On_ToggleOpen = 1   " move the cursor to the taglist window when it opened
-let Tlist_Exit_OnlyWindow = 1           " exit vim if the taglist is the only window
-""" key map for toggle taglist window
-nnoremap <Leader>m :TlistToggle<CR> 
-
-"" settings for ack.vim plugin
-let g:ackprg              = "ag --vimgrep"      " use 'ag' for searching instead of ack
-let g:ack_apply_qmappings = 1                   " enable internal key mappings in quickfix window
-let g:ackhighlight        = 1                   " highlight searched term in quickview window
-let g:ack_qhandler        = "botright copen 15" " open quickview window with 15 lines height
+"" settings for NERDTree plugin and sub-plugins
+let NERDTreeWinPos = "left"     " set NERDTree window position to left
+let NERDTreeShowHidden = 1      " set NERDTree window show hidden files
+""" close the tab if NERDTree is the only window remaining in it.
+if has("autocmd")
+    autocmd BufEnter *
+    \   if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
+endif
+""" key map for toggle NERDTree window
+nnoremap <leader>n :NERDTreeToggle<CR>
+""" set git status indicator for NERDtree-git-plugin
+let g:NERDTreeGitStatusIndicatorMapCustom = {
+    \   'Modified'  :'~',
+    \   'Staged'    :'+',
+    \   'Untracked' :'«',
+    \   'Renamed'   :'→',
+    \   'Unmerged'  :'!',
+    \   'Deleted'   :'x',
+    \   'Dirty'     :'*',
+    \   'Ignored'   :'…',
+    \   'Clean'     :'✓',
+    \   'Unknown'   :'?',
+    \}
+"""" for compatible with NERDTree-git-plugin, vim 8.1 and above required
+if v:version < 801 | let g:NERDTreeGitStatusEnable = 0 | endif
 
 "" settings for OmniCppComplete plugin
 set omnifunc=omni#cpp#complete
@@ -172,27 +177,49 @@ let OmniCpp_DefaultNamespace    = ["std"]   " set default namespace to 'std'
 let OmniCpp_ShowPrototypeInAbbr = 1 " show function prototypes in completion list
 let OmniCpp_SelectFirstItem     = 2 " automatically select the first result in completion list
 
+"" settings for rainbow plugin
+""" enable rainbow plugin by default, set to 0, enable it via :RainbowToggle
+let g:rainbow_active = 1
+
+"" settings for taglist.vim plugin
+let Tlist_Inc_Winwidth = 0              " disable auto increase window width to accommodate taglist
+let Tlist_Use_Right_Window = 1          " place the taglist window on the right side
+let Tlist_File_Fold_Auto_Close = 1      " auto close the tags tree for inactive files
+let Tlist_GainFocus_On_ToggleOpen = 1   " move the cursor to the taglist window when it opened
+let Tlist_Exit_OnlyWindow = 1           " exit vim if the taglist is the only window
+""" key map for toggle taglist window
+nnoremap <Leader>m :TlistToggle<CR>
+
 "" settings for vim-auto-popmenu plugin
 let g:apc_enable_ft = {'*':1}       " enable this plugin for all filetypes
 let g:apc_cr_confirm = 1            " use <CR> to confirm the selection
+if !has('patch-7.4.775')
+    " disable plugin's auto popup feture while vim do not have 'noselect' feture of completeopt
+    " there's also another way to trigger completion popup window by using <TAB> or <C-n> keys
+    let g:apc_enable_auto_pop = 0
+endif
 
+"" settings for vim-cppman plugin
+if has("autocmd")
+    autocmd FileType c,cpp setlocal keywordprg=:Cppman
+endif
+
+" ================================================================================================ "
 " register auto commands
+" ================================================================================================ "
 if has("autocmd")
     "" let cursor return to the position before the file closed when it's reopened
     autocmd BufReadPost *
     \   if line("'\"") > 0 && line("$") > 1 && line ("'\"") <= line("$") |
     \       execute "normal! g'\"" |
     \   endif
-    "" set local current directory to the parent directory of current buffer file
-    autocmd BufEnter * silent! lcd %:p:h
-    "" set commentstring to '// ' for c++ files
-    autocmd FileType cpp set commentstring=//\ %s
-    "" add keywords list to dictionary of current buffer for c++ files
-    autocmd FileType cpp execute 'setlocal dictionary+=' .
-    \   expand(fnamemodify($MYVIMRC, ':h') . '/.vim/dictionary/cpp_keywords_list.txt')
+    "" set commentstring to '// ' for c/c++ files
+    autocmd FileType c,cpp setlocal commentstring=//\ %s
 endif
 
+" ================================================================================================ "
 " support yank to remote terminal via osc52 escape sequence
+" ================================================================================================ "
 function OscYank()
     let text = substitute(getreg('"'), '\r\|\r\n', '\n', 'g')
     if empty(text)

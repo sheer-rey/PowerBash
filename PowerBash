@@ -197,24 +197,13 @@ function DoInstall {
 
     # check and append 'source .powerbashrc' statement
     sed -i "/$source_comment_begin/,/$source_comment_end/d" $bashrc_file
-    echo "" >> $bashrc_file
+    if [ -n "$(tail -n 1 $bashrc_file)" ]; then echo "" >> $bashrc_file; fi
     echo "$source_comment_begin" >> $bashrc_file
     echo "source $install_path/.powerbashrc" >> $bashrc_file
     echo "$source_comment_end" >> $bashrc_file
 
     # remove temp files while install PowerBash from $install_archive
     if [ -n "$install_archive" ]; then rm -rf $temp_dir; fi
-
-    # remove ncompatible vim plugin
-    local vim_version=$(vim --version 2>&1 | grep -oP '(?<=VIM - Vi IMproved )\d+\.\d+(?= \()')
-    ## vim version 8.1 and above required for pulgin nerdtree-git-plugin
-    if [ -z "$vim_version" ] || [[ "$vim_version" < "8.1" ]]; then
-        rm -rf $install_path/.vim/bundle/nerdtree-git-plugin
-    fi
-    ## vim version 7.3 and above required for pulgin indentline
-    if [ -z "$vim_version" ] || [[ "$vim_version" < "7.3" ]]; then
-        rm -rf $install_path/.vim/bundle/indentline
-    fi
 
     # print character picture message
     echo -ne "${font_cyan}"
