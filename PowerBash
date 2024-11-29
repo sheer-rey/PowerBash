@@ -1,16 +1,16 @@
 #!/bin/bash
 
 # root directory of PowerBash project
-powerbash_root=$(dirname $(realpath ${BASH_SOURCE[0]}))
+powerbash_root="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
 # load predefined variables and functions
-source ${powerbash_root}/predefined
+source "${powerbash_root}/predefined"
 
 # current time for backup suffix
 current_time=$(date +"%Y%m%d%H%M%S")
 
 # source statement
-bashrc_file=$HOME/.bashrc
+bashrc_file="$HOME/.bashrc"
 source_comment_begin='# POWERBASH BEGIN, DO NOT MODIFY THIS BLOCK!'
 source_comment_end='# POWERBASH END, DO NOT MODIFY THIS BLOCK!'
 
@@ -33,6 +33,16 @@ files=(
 )
 dirs=(
     ".vim"
+)
+dependencies=(
+    "ack"       # may used by vim plugin 'ack.vim'
+    "ag"        # may used by vim plugin 'ack.vim'
+    "ctags"     # may used by vim built-in jump and auto completion
+    "cscope"    # may used by vim built-in jump and auto completion
+    "rg"        # may used by vim plugin 'leaderf'
+    "cppman"    # may used by vim plugin 'vim-cppman'
+    "python3"   # may used by multiple vim plugins
+    "git"       # may used by multiple vim plugins
 )
 
 # predefined options for PowerBash
@@ -177,6 +187,14 @@ function DoInstall {
             fi
         done
     fi
+
+    # check dependent tools' existance
+    for dep in ${dependencies[@]}; do
+        if ! which $dep >&/dev/null; then
+            echo -e "${font_red}Warning:${font_reset} missing ${font_yellow}$dep${font_reset}" \
+                    "tool, there may be compatibility issues."
+        fi
+    done
 
     # install PowerBash configurations
     echo -e "${font_green}Start to install PowerBash ...${font_reset}"
