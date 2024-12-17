@@ -225,7 +225,9 @@ function OscYank()
     if empty(text)
         return
     endif
-    let osc52_seq = system('echo ' . shellescape(text) . ' | osc_yank')
+    let osc52_seq = system('echo '
+                    \   . substitute(shellescape(text), '\\\n', '\n', 'g')
+                    \   . ' | osc_yank')
     if filewritable('/dev/fd/2') == 1
         call writefile([osc52_seq], '/dev/fd/2', 'b')
     endif
