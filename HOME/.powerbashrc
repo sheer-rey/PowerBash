@@ -9,7 +9,7 @@ function git_branch {
     branch="$(git branch --no-color 2>/dev/null | grep '^\*' | sed -e 's/^\*\ //' | tr -d '()')"
     if [ "${branch}" != "" ]; then
         if [ "${branch}" = "no branch" ]; then
-            branch="⎇  Hash $(git rev-parse --short HEAD)"
+            branch="Hash $(git rev-parse --short HEAD)"
         fi
         echo "⎇  $branch"
     fi
