@@ -61,11 +61,15 @@ set shortmess=atToO             " set short message types
 set modeline                    " enable vim modeline
 set modelines=5                 " set the count of valid vim modelines
 set textwidth=100               " set maximum textwidth for break lines automatically
+set formatoptions+=t            " set automatically wrap text using textwidth
 set colorcolumn=100             " highlighting 100th coloum for auxiliary
 set laststatus=2                " set windows always have the status line
 set noshowmode                  " do not show Insert/Replace/Visual mode on the last line
 set cursorline                  " highlight the text line of the cursor
 set csqf=s-,c-,d-,i-,t-,e-      " show cscope results in quickfix window (cscopequickfix)
+set list                        " enable list mode
+"" set characters to show in list mode
+set listchars=tab:▸-,trail:•,precedes:«,extends:»,eol:↲,nbsp:␣
 "" set auto-complete properties in insert mode
 if has('patch-7.4.775')
     " 'noselect' feture of completeopt introduced in vim patch 7.4.775
@@ -215,6 +219,8 @@ if has("autocmd")
     \   endif
     "" set commentstring to '// ' for c/c++ files
     autocmd FileType c,cpp setlocal commentstring=//\ %s
+    "" do not expand tab to spaces while filetype is Makefile
+    autocmd FileType Makefile setlocal noexpandtab
 endif
 
 " ================================================================================================ "
