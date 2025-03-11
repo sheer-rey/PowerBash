@@ -1,3 +1,11 @@
+####################################################################################################
+# @file     PowerBash
+# @brief    Installer script for powerbash configurations.
+#
+# @author   sheer.rey<sheer.rey@gmail.com>
+# @date     03/07/2025
+# @version  0.0.1
+####################################################################################################
 #!/bin/bash
 
 # root directory of PowerBash project
@@ -30,11 +38,14 @@ files=(
     ".gitconfig"
     ".gitignore"
     ".gitmessage"
+    ".tmux.conf"
 )
 dirs=(
     ".vim"
 )
 dependencies=(
+    "vim"       # configuration required
+    "tmux"      # configuration required
     "ack"       # may used by vim plugin 'ack.vim'
     "ag"        # may used by vim plugin 'ack.vim'
     "ctags"     # may used by vim built-in jump and auto completion

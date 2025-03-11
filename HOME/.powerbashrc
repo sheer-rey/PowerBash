@@ -1,6 +1,11 @@
-# ~/.bashrc: executed by bash(1) for non-login shells.
-# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
-# for examples
+####################################################################################################
+# @file     .powerbashrc
+# @brief    Personal defined bash configuration file for using it powerful.
+#
+# @author   sheer.rey<sheer.rey@gmail.com>
+# @date     03/07/2025
+# @version  0.0.1
+####################################################################################################
 
 # pre-defined functions
 
@@ -29,6 +34,8 @@ function osc_yank {
     local func_name="osc_yank"
     local osc52_prefix="\033]52;c;"
     local osc52_suffix="\a"
+    local tmux_prefix="\033Ptmux;\033"
+    local tmux_suffix="\033\\"
     local max_lenth=74994
     local text=
     local lenth=
@@ -59,9 +66,15 @@ to be yank, default value is 74994.
     fi
 
     # check terminal type
-    if [[ "$TERM" != xterm* ]]; then
-        echo "osc_yank only supported in xterm now!"
+    if [[ "$TERM" != xterm* && "$TERM" != tmux* && "$TERM" != screen* ]]; then
+        echo "osc_yank only supported in xterm|tmux|screen now!"
         return 1
+    fi
+
+    # set escape sequence to paste through tmux/screen while it has been detected
+    if [[ -n "$TMUX" || "$TERM" == tmux* || "$TERM" == screen* ]]; then
+        osc52_prefix=${tmux_prefix}${osc52_prefix}
+        osc52_suffix=${osc52_suffix}${tmux_suffix}
     fi
 
     # check environment variable
