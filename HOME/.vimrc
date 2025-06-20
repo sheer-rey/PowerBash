@@ -49,7 +49,7 @@ set nobackup                    " turn off the backup file
 set number                      " turn on the line number
 set history=50                  " set command line history with 50 lines
 set ruler                       " show the line and column number of the cursor position
-set showcmd	                    " display incomplete commands at bottom right of the window
+set showcmd                     " display incomplete commands at bottom right of the window
 set hlsearch                    " turn on searching highlight
 set incsearch                   " turn on incremental searching
 set nowrap                      " turn off the line wrap while exceed window width
@@ -76,6 +76,8 @@ set laststatus=2                " set windows always have the status line
 set noshowmode                  " do not show Insert/Replace/Visual mode on the last line
 set cursorline                  " highlight the text line of the cursor
 set csqf=s-,c-,d-,i-,t-,e-      " show cscope results in quickfix window (cscopequickfix)
+set cscopetag                   " set ctrl+] command use cscope database additionally
+set cscopetagorder=1            " set ctrl+] command use ctags prior to cscope database
 set list                        " enable list mode
 "" set characters to show in list mode
 set listchars=tab:▸-,trail:•,precedes:«,extends:»,eol:↲,nbsp:␣
@@ -218,9 +220,22 @@ if has("autocmd")
 endif
 
 " ================================================================================================ "
+" support load cscope databse while it exists
+" ================================================================================================ "
+function SetupCscope()
+    if filereadable("cscope.out")
+        silent! cscope kill -1
+        silent! cscope add cscope.out
+    endif
+endfunction
+command! CscopeReload call SetupCscope()
+
+" ================================================================================================ "
 " register auto commands
 " ================================================================================================ "
 if has("autocmd")
+    "" autoload cscope database while it exists
+    autocmd VimEnter * call SetupCscope()
     "" let cursor return to the position before the file closed when it's reopened
     autocmd BufReadPost *
     \   if line("'\"") > 0 && line("$") > 1 && line ("'\"") <= line("$") |
