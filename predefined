@@ -1,4 +1,12 @@
 #!/bin/bash
+####################################################################################################
+# @file     predefined
+# @brief    Predefined variables and functions for bash scripts.
+#
+# @author   sheer.rey<sheer.rey@gmail.com>
+# @date     03/07/2025
+# @version  0.0.1
+####################################################################################################
 
 # define font formatting sequence
 ## text style (set)
@@ -67,9 +75,50 @@ if ! tput setaf 1 &>/dev/null || ! [ -t 1 ] || [ "$TERM" == "dumb" ]; then
     done
 fi
 
+# SC_LOG_LEVEL variable to control log level
+# Possible values: "quiet", "error", "warning", "info", "debug"
+SC_LOG_LEVEL=${SC_LOG_LEVEL:="info"}
+declare -A LOG_LEVELS=( ["quiet"]=0 ["error"]=1 ["warning"]=2 ["info"]=3 ["debug"]=4 )
+
+## @brief print formatted error message to stderr
+## @param $1     - formated error message to be printed
+## @param $2 ... - additional arguments to be formatted into the error message
+function PrintError {
+    if [[ -n "$SC_LOG_LEVEL" && "${LOG_LEVELS[$SC_LOG_LEVEL]}" -ge "${LOG_LEVELS["error"]}" ]]; then
+        printf "${font_red}Error:${font_reset} $1\n" "${@:2}" >&2
+    fi
+}
+
+## @brief print formatted warning message to stdout
+## @param $1     - formated warning message to be printed
+## @param $2 ... - additional arguments to be formatted into the warning message
+function PrintWarning {
+    if [[ -n "$SC_LOG_LEVEL" && "${LOG_LEVELS[$SC_LOG_LEVEL]}" -ge "${LOG_LEVELS["warning"]}" ]]; then
+        printf "${font_red}Warning:${font_reset} $1\n" "${@:2}" >&1
+    fi
+}
+
+## @brief print formatted info message to stdout
+## @param $1     - formated info message to be printed
+## @param $2 ... - additional arguments to be formatted into the info message
+function PrintInfo {
+    if [[ -n "$SC_LOG_LEVEL" && "${LOG_LEVELS[$SC_LOG_LEVEL]}" -ge "${LOG_LEVELS["info"]}" ]]; then
+        printf "${font_yellow}Info:${font_reset} $1\n" "${@:2}" >&1
+    fi
+}
+
+## @brief print formatted debug message to stdout
+## @param $1     - formated debug message to be printed
+## @param $2 ... - additional arguments to be formatted into the debug message
+function PrintDebug {
+    if [[ -n "$SC_LOG_LEVEL" && "${LOG_LEVELS[$SC_LOG_LEVEL]}" -ge "${LOG_LEVELS["debug"]}" ]]; then
+        printf "${font_blue}Debug:${font_reset} $1\n" "${@:2}" >&1
+    fi
+}
+
 # function definitions
 
-## @brief  parse argument via getopt tool
+## @brief parse argument via getopt tool
 ##
 ## @param  $1  - program name to display in error message while error occured
 ## @param  $2  - the short options string pass to getopt tool
@@ -111,11 +160,11 @@ function ParseArguments {
     elif [ $ret -eq 4 ]; then
         getopt_version="enhanced"
     else
-        echo -e "${font_red}Error:${font_reset} missing getopt tool, please install it first!" >&2
+        PrintError "getopt tool is not available, please install it first!"
         parsed_args=""
         return 1
     fi
-    echo -e "${font_yellow}Info:${font_reset} getopt tool with $getopt_version version."
+    PrintDebug "Parsing arguments via getopt tool with $getopt_version version."
 
     # parse arguments
     if [ $getopt_version = "enhanced" ]; then
@@ -123,16 +172,18 @@ function ParseArguments {
         ret=$?
     elif [ $getopt_version = "compatible" ]; then
         if [ -z "$sopt" ]; then
-            echo -e "${font_red}Error:${font_reset} short options must be specified" \
-                    "while getopt tool working in $getopt_version version!" >&2
+            PrintError "%s%s" \
+                       "short options must be specified " \
+                       "while getopt tool working in $getopt_version version!"
             parsed_args=""
             return 2
         fi
         parsed_args=$(getopt ${sopt:2} "$@" 2>&1)
         ret=$?
     else
-        echo -e "${font_red}Error:${font_reset}" \
-                "unrecognized getopt version string($getopt_version)!" >&2
+        PrintError "%s%s" \
+                   "getopt tool version($getopt_version) is not recognized, " \
+                   "please check your system configuration and install the correct version!"
         parsed_args=""
         return 3
     fi
@@ -140,8 +191,7 @@ function ParseArguments {
     if [ $ret -ne 0 ]; then
         # extract first error line, in order to handle multi-line output when error occurs
         # in parsing argument via getopt tool
-        echo -e "${font_red}Error:${font_reset}" \
-                "$(echo "$parsed_args" | head -n 1 | sed s/getopt/${name:2}/g)" >&2
+        PrintError "$(echo "$parsed_args" | head -n 1 | sed s/getopt/${name:2}/g)"
         parsed_args=$(echo "$parsed_args" | tail -n 1)
         return 4
     fi

@@ -1,3 +1,4 @@
+#!/bin/bash
 ####################################################################################################
 # @file     PowerBash
 # @brief    Installer script for powerbash configurations.
@@ -6,7 +7,6 @@
 # @date     03/07/2025
 # @version  0.0.1
 ####################################################################################################
-#!/bin/bash
 
 # root directory of PowerBash project
 powerbash_root="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
@@ -109,50 +109,48 @@ Options:
 
 function DoInstall {
     # authority check for $install_path
-    echo -e "${font_magenta}Checking authority for installation directory ...${font_reset}"
+    PrintInfo "${font_magenta}Checking authority for installation directory ...${font_reset}"
     if ! [ -r "$install_path" ] || ! [ -w "$install_path" ] || ! [ -x "$install_path" ]; then
-        echo -e "${font_red}Error:${font_reset} $install_path not accessble," \
-                "install canceled!" >&2
+        PrintError "$install_path not accessble, install canceled!"
         exit 2
     fi
 
     # check and backup previous configuration
     if [ $install_force -ne 1 ]; then
-        echo -e "${font_magenta}Checking authority for backup directory ...${font_reset}"
+        PrintInfo "${font_magenta}Checking authority for backup directory ...${font_reset}"
         if [ -e "$install_path/$backup_dir" ]; then
             if ! [ -d "$install_path/$backup_dir" ]; then
-                echo -e "${font_red}Error:${font_reset} $install_path/$backup_dir existing" \
-                        "but not a directory, install canceled!" >&2
+                PrintError "$install_path/$backup_dir existing but not a directory, install canceled!"
                 exit 2
             elif ! [ -w "$install_path/$backup_dir" ]; then
-                echo -e "${font_red}Error:${font_reset} $install_path/$backup_dir existing" \
-                        "but not writeable, install canceled!" >&2
+                PrintError "$install_path/$backup_dir existing but not writeable, install canceled!"
                 exit 2
             fi
         else
             mkdir -p "$install_path/$backup_dir"
         fi
 
-        echo -e "${font_magenta}Looking for existing configurations ...${font_reset}"
+        PrintInfo "${font_magenta}Looking for existing configurations ...${font_reset}"
         local temp_dir=$(mktemp -d)
         for file in ${files[@]}; do
             if [ -f "$install_path/$file" ]; then
-                echo -e "${font_yellow}Found file $install_path/$file${font_reset}"
+                PrintInfo "${font_yellow}Found file $install_path/$file${font_reset}"
                 cp "$install_path/$file" $temp_dir/
             fi
         done
         for dir in ${dirs[@]}; do
             if [ -d "$install_path/$dir" ]; then
-                echo -e "${font_yellow}Found directory $install_path/$dir${font_reset}"
+                PrintInfo "${font_yellow}Found directory $install_path/$dir${font_reset}"
                 cp -r "$install_path/$dir" $temp_dir/
             fi
         done
 
         if [ -z "$(ls -A $temp_dir)" ]; then
-            echo -e "${font_yellow}No existing configurations found${font_reset}"
+            PrintInfo "${font_yellow}No existing configurations found${font_reset}"
         else
-            echo -e "${font_magenta}Backing up existing configurations to" \
-                    "$install_path/$backup_dir/$backup_file ...${font_reset}"
+            PrintInfo "${font_magenta}%s%s${font_reset}" \
+                      "Backing up existing configurations to " \
+                      "$install_path/$backup_dir/$backup_file ..."
             tar -czf "$install_path/$backup_dir/$backup_file" -C $temp_dir $(ls -A $temp_dir)
         fi
         rm -rf $temp_dir
@@ -160,39 +158,34 @@ function DoInstall {
 
     # install PowerBash from $install_archive
     if [ -n "$install_archive" ]; then
-        echo -e "${font_magenta}Checking authority for archive file ...${font_reset}"
+        PrintInfo "${font_magenta}Checking authority for archive file ...${font_reset}"
         if ! [ -e "$install_archive" ]; then
-            echo -e "${font_red}Error:${font_reset} specified archive file $install_archive" \
-                    "not exist, install canceled!" >&2
+            PrintError "specified archive file $install_archive not exist, install canceled!"
             exit 2
         fi
         if ! [ -r "$install_archive" ]; then
-            echo -e "${font_red}Error:${font_reset} specified archive file $install_archive" \
-                    "is not accessble, install canceled!" >&2
+            PrintError "specified archive file $install_archive is not accessble, install canceled!"
             exit 2
         fi
 
-        echo -e "${font_magenta}Checking validity for archive file ...${font_reset}"
+        PrintInfo "${font_magenta}Checking validity for archive file ...${font_reset}"
         if ! [[ "$(basename "$install_archive")" =~ $backup_pattern ]] || \
            ! tar -tzf "$install_archive" >&/dev/null; then
-            echo -e "${font_red}Error:${font_reset} specified archive file $install_archive" \
-                    "is not valid, install canceled!" >&2
+            PrintError "specified archive file $install_archive is not valid, install canceled!"
             exit 2
         fi
         local temp_dir=$(mktemp -d)
         tar -xzf "$install_archive" -C $temp_dir >&/dev/null
         for file in ${files[@]}; do
             if ! [ -e "$temp_dir/$file" ]; then
-                echo -e "${font_red}Error:${font_reset} specified archive file $install_archive" \
-                        "is not valid, install canceled!" >&2
+                PrintError "specified archive file $install_archive is not valid, install canceled!"
                 rm -rf $temp_dir
                 exit 2
             fi
         done
         for dir in ${dirs[@]}; do
             if ! [ -e "$temp_dir/$dir" ]; then
-                echo -e "${font_red}Error:${font_reset} specified archive file $install_archive" \
-                        "is not valid, install canceled!" >&2
+                PrintError "specified archive file $install_archive is not valid, install canceled!"
                 rm -rf $temp_dir
                 exit 2
             fi
@@ -202,13 +195,14 @@ function DoInstall {
     # check dependent tools' existance
     for dep in ${dependencies[@]}; do
         if ! which $dep >&/dev/null; then
-            echo -e "${font_red}Warning:${font_reset} missing ${font_yellow}$dep${font_reset}" \
-                    "tool, there may be compatibility issues."
+            PrintWarning "%b%s" \
+                         "missing ${font_yellow}$dep${font_reset} tool, " \
+                         "there may be compatibility issues."
         fi
     done
 
     # install PowerBash configurations
-    echo -e "${font_green}Start to install PowerBash ...${font_reset}"
+    PrintInfo "${font_green}Start to install PowerBash ...${font_reset}"
     local powerbash_src_dir=
     if [ -n "$install_archive" ]; then
         powerbash_src_dir="$temp_dir"
@@ -249,34 +243,33 @@ function DoInstall {
 
 function DoUninstall {
     # authority check for $uninstall_path
-    echo -e "${font_magenta}Checking authority for uninstallation directory ...${font_reset}"
+    PrintInfo "${font_magenta}Checking authority for uninstallation directory ...${font_reset}"
     if ! [ -r "$uninstall_path" ] || ! [ -w "$uninstall_path" ] || ! [ -x "$uninstall_path" ]; then
-        echo -e "${font_red}Error:${font_reset} $uninstall_path not accessble," \
-                "install canceled!" >&2
+        PrintError "$uninstall_path not accessble, uninstall canceled!"
         exit 3
     fi
 
     # check PowerBash configuration
-    echo -e "${font_magenta}Looking for existing configurations ...${font_reset}"
+    PrintInfo "${font_magenta}Looking for existing configurations ...${font_reset}"
     local conf_list=
     local conf_index=0
     for file in ${files[@]}; do
         if [ -f "$uninstall_path/$file" ]; then
-            echo -e "${font_yellow}Found file $uninstall_path/$file${font_reset}"
+            PrintInfo "${font_yellow}Found file $uninstall_path/$file${font_reset}"
             conf_list[$conf_index]="$uninstall_path/$file"
             let conf_index++
         fi
     done
     for dir in ${dirs[@]}; do
         if [ -d "$uninstall_path/$dir" ]; then
-            echo -e "${font_yellow}Found directory $uninstall_path/$dir${font_reset}"
+            PrintInfo "${font_yellow}Found directory $uninstall_path/$dir${font_reset}"
             conf_list[$conf_index]="$uninstall_path/$dir"
             let conf_index++
         fi
     done
 
     # remove PowerBash configuration
-    echo -e "${font_green}Start to uninstall PowerBash ...${font_reset}"
+    PrintInfo "${font_green}Start to uninstall PowerBash ...${font_reset}"
     rm -rf "${conf_list[@]}"
 
     # check and remove 'source .powerbashrc' statement
@@ -339,21 +332,20 @@ while true; do
             elif [ $getopt_version = "compatible" ]; then
                 PrintHelpCompatible
             else
-                echo -e "${font_red}Error:${font_reset}" \
-                        "unrecognized getopt version string($getopt_version)!" >&2
+                PrintError "unrecognized getopt version string($getopt_version)!"
                 exit 1
             fi
             exit 0
         ;;
         "--")
             if [ $# -gt 1 ]; then
-                echo -e "${font_red}Error:${font_reset} unrecognized argument $2!" >&2
+                PrintError "unrecognized argument $2!"
                 exit 1
             fi
             break
         ;;
         *)
-            echo -e "${font_red}Error:${font_reset} unrecognized option $1!" >&2
+            PrintError "unrecognized option $1!"
             exit 1
         ;;
     esac
@@ -362,16 +354,13 @@ done
 ## option confilict check
 if [ -n "$uninstall_path" ]; then
     if [ -n "$install_path" ]; then
-        echo -e "${font_red}Error:${font_reset} the install and uninstall options cannot" \
-                "specified at the same time!" >&2
+        PrintError "the install and uninstall options cannot specified at the same time!"
         exit 1
     elif [ -n "$install_archive" ]; then
-        echo -e "${font_red}Error:${font_reset} the archive and uninstall options cannot" \
-                "specified at the same time!" >&2
+        PrintError "the archive and uninstall options cannot specified at the same time!"
         exit 1
     elif [ $install_force -eq 1 ]; then
-        echo -e "${font_red}Error:${font_reset} the force and uninstall options cannot" \
-                "specified at the same time!" >&2
+        PrintError "the force and uninstall options cannot specified at the same time!"
         exit 1
     fi
 fi
