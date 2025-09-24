@@ -97,18 +97,28 @@ set fileencodings=ucs-bom,utf-8,default,cp936,gb18030,big5,euc-jp,euc-kr,latin1
 " define new <Leader> key and key mappings
 " ================================================================================================ "
 let mapleader = ";"
-"" jumping to the window left
+"" jump to the window left
 nnoremap <leader>h <C-W><C-H>
-"" jumping to the window right
+"" jumpng to the window right
 nnoremap <leader>l <C-W><C-L>
-"" jumping to the window above
+"" jumpng to the window above
 nnoremap <leader>k <C-W><C-K>
-"" jumping to the window below
+"" jumpng to the window below
 nnoremap <leader>j <C-W><C-J>
 "" split current window and explore current file's directory
 nmap <Leader>s :Sexplore<CR>
 "" vertical split current window and explore current file's directory
 nmap <Leader>v :Vexplore<CR>
+"" open quickfix window
+nmap <Leader>co :copen<CR>
+"" close quickfix window
+nmap <Leader>cc :cclose<CR>
+"" jump to next result of quickfix window
+nmap <Leader>cn :cnext<CR>
+"" jump to previous result of quickfix window
+nmap <Leader>cp :cprev<CR>
+"" show result list in quickfix window
+nmap <Leader>cl :clist<CR>
 
 " ================================================================================================ "
 " settings for plugins
