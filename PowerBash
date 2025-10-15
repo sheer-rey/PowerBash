@@ -77,8 +77,8 @@ Options:
                             If [path] has not been specified, uninstall from
                             \$HOME by default.
   -a, --archive <file>      Only valid with -i/--install option. Used to install
-                            PowerBash package with specified archive <file>
-                            instead of original one.
+                            PowerBash package with the specified archived backup
+                            <file> instead of original one.
   -f, --force               Only valid with -i/--install option. Used to overwrite
                             existing PowerBash package files instead of archive.
 
@@ -98,8 +98,9 @@ Options:
                 If [path] has not been specified, install to \$HOME by default.
   -u [path]     Uninstall PowerBash package from specified [path].
                 If [path] has not been specified, uninstall from \$HOME by default.
-  -a <file>     Only valid with -i option. Used to install PowerBash package with
-                specified archive <file> instead of original one.
+  -a <file>     Only valid with -i/--install option. Used to install PowerBash
+                package with the specified archived backup <file> instead of
+                original one.
   -f            Only valid with -i option. Used to overwrite existing PowerBash
                 package files instead of archive.
 
