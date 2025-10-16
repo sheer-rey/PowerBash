@@ -79,6 +79,8 @@ set csqf=s-,c-,d-,i-,t-,e-      " show cscope results in quickfix window (cscope
 set cscopetag                   " set ctrl+] command use cscope database additionally
 set cscopetagorder=1            " set ctrl+] command use ctags prior to cscope database
 set list                        " enable list mode
+set updatetime=500              " set vim update time to 500ms
+set signcolumn=auto             " set signcolumn draw mode to auto
 "" set characters to show in list mode
 set listchars=tab:▸-,trail:•,precedes:«,extends:»,eol:↲,nbsp:␣
 "" set auto-complete properties in insert mode
@@ -127,10 +129,12 @@ nmap <Leader>cl :clist<CR>
 nmap <Leader>a :A<CR>
 
 "" settings for ack.vim plugin
-let g:ackprg              = "ag --vimgrep"      " use 'ag' for searching instead of ack
 let g:ack_apply_qmappings = 1                   " enable internal key mappings in quickfix window
 let g:ackhighlight        = 1                   " highlight searched term in quickview window
 let g:ack_qhandler        = "botright copen 15" " open quickview window with 15 lines height
+if executable('ag')
+    let g:ackprg = "ag --vimgrep"               " use 'ag' for searching instead of ack if avaliable
+endif
 
 "" settings for indentline plugin
 """ for compatible with indentline, vim 7.3 and above required
@@ -253,6 +257,11 @@ if has("autocmd")
     \   endif
     "" set commentstring to '// ' for c/c++ files
     autocmd FileType c,cpp setlocal commentstring=//\ %s
+    "" set keywordprg to Cppman for c/c++ files while vim version is 8.1 or above
+    if v:version >= 801
+        autocmd FileType c setlocal keywordprg=:Cppman!
+        autocmd FileType cpp setlocal keywordprg=:Cppman
+    endif
     "" do not expand tab to spaces while filetype is Makefile
     autocmd FileType Makefile setlocal noexpandtab
 endif

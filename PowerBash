@@ -229,6 +229,11 @@ function DoInstall {
     # remove temp files while install PowerBash from $install_archive
     if [ -n "$install_archive" ]; then rm -rf $temp_dir; fi
 
+    # Generate vim help documents for new installed plugins
+    if vim -h &> /dev/null; then
+        vim -c 'Helptags' -c 'q'
+    fi
+
     # print character picture message
     echo -ne "${font_cyan}"
     echo " __________________          "
