@@ -80,7 +80,10 @@ set cscopetag                   " set ctrl+] command use cscope database additio
 set cscopetagorder=1            " set ctrl+] command use ctags prior to cscope database
 set list                        " enable list mode
 set updatetime=500              " set vim update time to 500ms
-set signcolumn=auto             " set signcolumn draw mode to auto
+"" set signcolumn draw mode to auto
+if has('patch-7.4.2201')
+    set signcolumn=auto
+endif
 "" set characters to show in list mode
 set listchars=tab:▸-,trail:•,precedes:«,extends:»,eol:↲,nbsp:␣
 "" set auto-complete properties in insert mode
