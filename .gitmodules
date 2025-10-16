@@ -83,5 +83,5 @@
 	branch = master
 [submodule "HOME/.vim/bundle/vim-plugin-AnsiEsc"]
 	path = HOME/.vim/bundle/vim-plugin-AnsiEsc
-	url = https://github.com/powerman/vim-plugin-AnsiEsc.git
+	url = https://github.com/sheer-rey/vim-plugin-AnsiEsc.git
 	branch = master
