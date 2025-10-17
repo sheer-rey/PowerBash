@@ -44,16 +44,19 @@ dirs=(
     ".vim"
 )
 dependencies=(
-    "vim"       # configuration required
-    "tmux"      # configuration required
-    "ack"       # may used by vim plugin 'ack.vim'
-    "ag"        # may used by vim plugin 'ack.vim'
-    "ctags"     # may used by vim built-in jump and auto completion
-    "cscope"    # may used by vim built-in jump and auto completion
-    "rg"        # may used by vim plugin 'leaderf'
-    "cppman"    # may used by vim plugin 'vim-cppman'
-    "python3"   # may used by multiple vim plugins
-    "git"       # may used by multiple vim plugins
+    "vim"          # configuration required
+    "tmux"         # configuration required
+    "ack"          # may used by vim plugin 'ack.vim'
+    "ag"           # may used by vim plugin 'ack.vim'
+    "ctags"        # may used by vim built-in jump and auto completion
+    "cscope"       # may used by vim built-in jump and auto completion
+    "global"       # may used by vim plugin 'gutentags'
+    "gtags"        # may used by vim plugin 'gutentags'
+    "gtags-cscope" # may used by vim plugin 'gutentags'
+    "rg"           # may used by vim plugin 'leaderf'
+    "cppman"       # may used by vim plugin 'vim-cppman'
+    "python3"      # may used by multiple vim plugins
+    "git"          # may used by multiple vim plugins
 )
 
 # predefined options for PowerBash

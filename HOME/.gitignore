@@ -5,3 +5,6 @@ tags
 cscope.out
 cscope.in.out
 cscope.po.out
+GTAGS
+GRTAGS
+GPATH

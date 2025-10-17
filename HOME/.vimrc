@@ -65,7 +65,7 @@ set nofoldenable                " not fold any text while file was opened
 set ignorecase                  " set case-insensitive in search patterns
 set smartcase                   " turn on case-sensitive while upper case exist in search patterns
 set mouse=nv                    " enable mouse support in normal and visual mode
-set tags=tags;/                 " specify tags searching path upward to root(/)
+set tags=tags;                  " specify tags searching path upward to root(/)
 set shortmess=atToO             " set short message types
 set modeline                    " enable vim modeline
 set modelines=5                 " set the count of valid vim modelines
@@ -161,7 +161,7 @@ let g:lightline = {
     \       'right': [
     \           [ 'lineinfo' ],
     \           [ 'percent' ],
-    \           [ 'fileformat', 'fileencoding', 'filetype', 'charvaluehex' ],
+    \           [ 'gutentagsstatus', 'fileformat', 'fileencoding', 'filetype', 'charvaluehex' ],
     \       ],
     \   },
     \   'component': {
@@ -169,8 +169,37 @@ let g:lightline = {
     \   },
     \   'component_function': {
     \       'gitbranch': 'GitBranch',
+    \       'gutentagsstatus': 'gutentags#statusline',
     \   },
     \}
+
+"" settings for vim-gutentags plugin
+if !executable('ctags')
+    " disable gutentags plugin if ctags is not avaliable
+    let g:gutentags_dont_load = 1
+else
+    if executable('gtags-cscope')
+        " enable gtags-cscope module if gtags_cscope is avaliable
+        let g:gutentags_modules = ['ctags', 'gtags_cscope']
+    elseif executable('cscope')
+        " enable cscope module if cscope is avaliable
+        let g:gutentags_modules = ['ctags', 'cscope']
+        " enable inverted index for cscope
+        let g:gutentags_cscope_build_inverted_index = 1
+    else
+        " only enable ctags module
+        let g:gutentags_modules = ['ctags']
+    endif
+    let g:gutentags_project_root = ['.vscode']
+    " set gutentags ctags extra arguments
+    let g:gutentags_ctags_extra_args = ['--fields=+niazS', '--extras=+q']
+    " refresh lightline statusline while gutentags updating or updated
+    augroup MyGutentagsStatusLineRefresher
+            autocmd!
+            autocmd User GutentagsUpdating call lightline#update()
+            autocmd User GutentagsUpdated call lightline#update()
+    augroup END
+endif
 
 "" settings for NERDTree plugin and sub-plugins
 let NERDTreeWinPos = "left"     " set NERDTree window position to left
@@ -214,11 +243,15 @@ let OmniCpp_SelectFirstItem     = 2 " automatically select the first result in c
 let g:rainbow_active = 1
 
 "" settings for taglist.vim plugin
-let Tlist_Inc_Winwidth = 0              " disable auto increase window width to accommodate taglist
-let Tlist_Use_Right_Window = 1          " place the taglist window on the right side
-let Tlist_File_Fold_Auto_Close = 1      " auto close the tags tree for inactive files
-let Tlist_GainFocus_On_ToggleOpen = 1   " move the cursor to the taglist window when it opened
-let Tlist_Exit_OnlyWindow = 1           " exit vim if the taglist is the only window
+if !executable('ctags')
+    let Tlist_Disabled = 1                  " disable taglist plugin if ctags is not avaliable
+else
+    let Tlist_Inc_Winwidth = 0              " disable auto increase window width to accommodate taglist
+    let Tlist_Use_Right_Window = 1          " place the taglist window on the right side
+    let Tlist_File_Fold_Auto_Close = 1      " auto close the tags tree for inactive files
+    let Tlist_GainFocus_On_ToggleOpen = 1   " move the cursor to the taglist window when it opened
+    let Tlist_Exit_OnlyWindow = 1           " exit vim if the taglist is the only window
+endif
 """ key map for toggle taglist window
 nnoremap <Leader>m :TlistToggle<CR>
 
@@ -233,26 +266,17 @@ endif
 
 "" settings for vim-cppman plugin
 if has("autocmd")
-    autocmd FileType c,cpp setlocal keywordprg=:Cppman
-endif
-
-" ================================================================================================ "
-" support load cscope databse while it exists
-" ================================================================================================ "
-function SetupCscope()
-    if filereadable("cscope.out")
-        silent! cscope kill -1
-        silent! cscope add cscope.out
+    "" set keywordprg to Cppman for c/c++ files while vim version is 8.1 or above
+    if v:version >= 801
+        autocmd FileType c setlocal keywordprg=:Cppman!
+        autocmd FileType cpp setlocal keywordprg=:Cppman
     endif
-endfunction
-command! CscopeReload call SetupCscope()
+endif
 
 " ================================================================================================ "
 " register auto commands
 " ================================================================================================ "
 if has("autocmd")
-    "" autoload cscope database while it exists
-    autocmd VimEnter * call SetupCscope()
     "" let cursor return to the position before the file closed when it's reopened
     autocmd BufReadPost *
     \   if line("'\"") > 0 && line("$") > 1 && line ("'\"") <= line("$") |
@@ -260,11 +284,6 @@ if has("autocmd")
     \   endif
     "" set commentstring to '// ' for c/c++ files
     autocmd FileType c,cpp setlocal commentstring=//\ %s
-    "" set keywordprg to Cppman for c/c++ files while vim version is 8.1 or above
-    if v:version >= 801
-        autocmd FileType c setlocal keywordprg=:Cppman!
-        autocmd FileType cpp setlocal keywordprg=:Cppman
-    endif
     "" do not expand tab to spaces while filetype is Makefile
     autocmd FileType Makefile setlocal noexpandtab
 endif

@@ -252,17 +252,19 @@ In order to make PowerBash works properly, ensure you have the following tools i
 - `tmux` (almost versions is compatible, but 3.4 and above recommended)
 - `vim` (almost versions is compatible, but 8.1 and above recommended)
 - `python3` (for various Vim plugins)
-- `ctags` (for taglist and code navigation in Vim)
 
 And to make full use of all features, it's recommended to also have the following tools:
 - `ack` or `ag` (for fast searching in Vim)
+- `ctags` (for taglist and code navigation in Vim)
 - `cscope` (for code navigation in Vim)
+- `gtags` (for GNU Global tagging system support in Vim)
+- `gtags-cscope` (for cscope database generation and code navigation in Vim)
 - `rg` (ripgrep, for fuzzy finding in Vim)
 - `cppman` (for C++ manual integration in Vim)
 
 With Ubuntu22.04 or later, you can install these tools using:
 ```bash
-sudo apt install -y git tmux vim python3 ack silversearcher-ag universal-ctags cscope ripgrep cppman
+sudo apt install -y git tmux vim python3 ack silversearcher-ag universal-ctags cscope global ripgrep cppman
 ```
 
 

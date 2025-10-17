@@ -85,3 +85,6 @@
 	path = HOME/.vim/bundle/vim-plugin-AnsiEsc
 	url = https://github.com/sheer-rey/vim-plugin-AnsiEsc.git
 	branch = master
+[submodule "HOME/.vim/bundle/vim-gutentags"]
+	path = HOME/.vim/bundle/vim-gutentags
+	url = https://github.com/sheer-rey/vim-gutentags.git
