@@ -144,13 +144,6 @@ endif
 if v:version < 703 | let g:indentLine_enabled = 0 | endif
 
 "" settings for lightline plugin
-function GitBranch()
-    let l:branch = gitbranch#name()
-    if empty(l:branch)
-        return ''
-    endif
-    return '⎇  ' . l:branch
-endfunction
 let g:lightline = {
     \   'colorscheme': 'dracula',
     \   'active': {
@@ -168,7 +161,7 @@ let g:lightline = {
     \       'charvaluehex': '0x%B',
     \   },
     \   'component_function': {
-    \       'gitbranch': 'GitBranch',
+    \       'gitbranch': 'githelper#get_branch_name',
     \       'gutentagsstatus': 'gutentags#statusline',
     \   },
     \}
@@ -178,6 +171,7 @@ if !executable('ctags')
     " disable gutentags plugin if ctags is not avaliable
     let g:gutentags_dont_load = 1
 else
+    " detect and enable gutentags modules according to available tools
     if executable('gtags-cscope')
         " enable gtags-cscope module if gtags_cscope is avaliable
         let g:gutentags_modules = ['ctags', 'gtags_cscope']
@@ -190,15 +184,49 @@ else
         " only enable ctags module
         let g:gutentags_modules = ['ctags']
     endif
-    let g:gutentags_project_root = ['.vscode']
+    " set extra gutentags project root markers
+    let g:gutentags_project_root = ['.vscode', '.notags', '.gutctags', '.gutgtags', '.projroot']
     " set gutentags ctags extra arguments
-    let g:gutentags_ctags_extra_args = ['--fields=+niazS', '--extras=+q']
+    let g:gutentags_ctags_extra_args = ['--fields=+niazlS', '--extra=+q', '--languages=c,c++,python,go,sh']
+    " detect ctags implementation and set gutentags ctags label to GTAGSLABEL environment variable
+    let $GTAGSLABEL = ctagslabel#get_gtags_label()
     " refresh lightline statusline while gutentags updating or updated
-    augroup MyGutentagsStatusLineRefresher
+    augroup GutentagsStatusLineRefresher
             autocmd!
             autocmd User GutentagsUpdating call lightline#update()
             autocmd User GutentagsUpdated call lightline#update()
     augroup END
+endif
+
+"" settings for leaderf plugin
+if (!has('python') && !has('python3')) || !has('patch-7.4.1126')
+    " disable leaderf plugin if vim do not support python2 and python3 or vim version is below 7.4.1126
+    let g:leaderf_loaded = 1 " set to 1 to disable prevent loading leaderf plugin
+else
+    " set wildignore to ignore some files and directories while searching
+    let g:Lf_WildIgnore = {
+            \ 'dir': ['.svn','.git','.hg'],
+            \ 'file': ['*.sw?','~$*','*.bak','*.exe','*.o','*.so','*.py[co]']
+            \}
+    " set working directory mode to 'Ac' (A: project root, c: current file's directory)
+    let g:Lf_WorkingDirectoryMode = 'Ac'
+    " set popup window as leaderf window if vim version is 8.1.1615 or above
+    if has('patch-8.1.1615')
+        let g:Lf_WindowPosition = 'popup'
+    endif
+    " disable gtags auto generate and auto update features to avoid conflicts with gutentags plugin
+    let g:Lf_GtagsAutoGenerate = 0
+    let g:Lf_GtagsGutentags = 1
+    let g:Lf_GtagsAutoUpdate = 0
+    " post set gutentags project root markers as leaderf root markers while vim started
+    augroup LeaderfPostSettings
+        autocmd!
+        autocmd VimEnter * let g:Lf_RootMarkers = get(g:, 'gutentags_project_root', [])
+    augroup END
+    " key map for open leaderf search window
+    let g:Lf_ShortcutF = "<leader>ff"
+    let g:Lf_ShortcutB = "<leader>fb"
+    nnoremap <C-p> :LeaderfFile<CR>
 endif
 
 "" settings for NERDTree plugin and sub-plugins
@@ -274,7 +302,7 @@ if has("autocmd")
 endif
 
 " ================================================================================================ "
-" register auto commands
+" register plugin-independent autocmd events
 " ================================================================================================ "
 if has("autocmd")
     "" let cursor return to the position before the file closed when it's reopened

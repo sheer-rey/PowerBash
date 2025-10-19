@@ -206,7 +206,8 @@ This will remove the installed configuration files from your `$HOME` directory.
   | `<C-W> j` | Jump to the window below | Built-in |
   | `<C-W> k` | Jump to the window above | Built-in |
   | `<C-W> l` | Jump to the window right | Built-in |
-  | `<C-x><C-o>` | Trigger omni-completion (C/C++ via OmniCppComplete) | OmniCppComplete |
+  | `<C-P>` | Open fuzzy file finder of leaderf | Project-configured |
+  | `<C-X><C-O>` | Trigger omni-completion (C/C++ via OmniCppComplete) | OmniCppComplete |
 
   ---
 
@@ -234,11 +235,11 @@ This will remove the installed configuration files from your `$HOME` directory.
   | `<Leader>cn` | Jump to next result of quickfix window | Project-configured |
   | `<Leader>cp` | Jump to previous result of quickfix window | Project-configured |
   | `<Leader>cl` | Show result list in quickfix window | Project-configured |
+  | `<Leader>ff` | Open fuzzy file finder of leaderf | Project-configured |
+  | `<Leader>fb` | Open fuzzy buffer finder of leaderf | Project-configured |
   | `<Leader>a` | Switch between source/header file (C/C++) | a.vim |
   | `<Leader>n` | Toggle file explorer sidebar | NERDTree |
   | `<Leader>m` | Toggle source tag browser | taglist.vim |
-  | `<Leader>f` | Fuzzy file finder | leaderf |
-  | `<Leader>b` | Fuzzy buffer finder | leaderf |
 
 > Notes:  
   Built-in commands work in any Vim. Plugin-provided commands may require the plugin to be installed and loaded (they are included in this project).  
