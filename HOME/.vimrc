@@ -188,6 +188,8 @@ else
     let g:gutentags_project_root = ['.vscode', '.notags', '.gutctags', '.gutgtags', '.projroot']
     " set gutentags ctags extra arguments
     let g:gutentags_ctags_extra_args = ['--fields=+niazlS', '--extra=+q', '--languages=c,c++,python,go,sh']
+    " disable ctrlp plugin root markers addition while gutentags updating project root markers
+    let g:gutentags_add_ctrlp_root_markers = 0
     " detect ctags implementation and set gutentags ctags label to GTAGSLABEL environment variable
     let $GTAGSLABEL = ctagslabel#get_gtags_label()
     " refresh lightline statusline while gutentags updating or updated
@@ -198,18 +200,41 @@ else
     augroup END
 endif
 
-"" settings for leaderf plugin
+"" settings for leaderf and ctrlp plugin
 if (!has('python') && !has('python3')) || !has('patch-7.4.1126')
     " disable leaderf plugin if vim do not support python2 and python3 or vim version is below 7.4.1126
     let g:leaderf_loaded = 1 " set to 1 to disable prevent loading leaderf plugin
+    " fallback to use ctrlp plugin
+    " set ctrlp plugin search match current opend file
+    let g:ctrlp_match_current_file = 1
+    " set ctrlp plugin ignore some files and directories while searching
+    let g:ctrlp_custom_ignore = {
+        \ 'dir':  '\v[\/]\.(git|hg|svn|tox|env|venv|node_modules|__pycache__)$',
+        \ 'file': '\v\.(exe|dll|so|o|d|obj|pyc|pyo|swp|swo|bak|tmp|class|log)$',
+        \}
+    " set ctrlp plugin working directory mode to 'ra' (r: project root, a: current file's directory)
+    let g:ctrlp_working_path_mode = 'ra'
+    " post set gutentags project root markers as ctrlp root markers while vim started
+    augroup CtrlPPostSettings
+        autocmd!
+        autocmd VimEnter * let g:ctrlp_root_markers = get(g:, 'gutentags_project_root', [])
+    augroup END
+    " key map for open ctrlp search window
+    nmap <Leader>ff :CtrlP<CR>
+    nmap <Leader>fb :CtrlPBuffer<CR>
 else
+    " disable ctrlp plugin if current vim enviroment support leaderf plugin
+    let g:loaded_ctrlp = 1
     " set wildignore to ignore some files and directories while searching
     let g:Lf_WildIgnore = {
-            \ 'dir': ['.svn','.git','.hg'],
-            \ 'file': ['*.sw?','~$*','*.bak','*.exe','*.o','*.so','*.py[co]']
-            \}
-    " set working directory mode to 'Ac' (A: project root, c: current file's directory)
-    let g:Lf_WorkingDirectoryMode = 'Ac'
+        \ 'dir': ['.git', '.hg', '.svn', '.tox', '.env', '.venv', 'node_modules', '__pycache__'],
+        \ 'file': [
+        \   '*.exe', '*.dll', '*.so', '*.o', '*.obj', '*.pyc', '*.pyo', '*.swp', '*.swo', '*.bak',
+        \   '*.tmp', '*.log', '*.class', '*.d'
+        \ ]
+        \}
+    " set working directory mode to 'AF' (A: project root, F: current file's directory)
+    let g:Lf_WorkingDirectoryMode = 'AF'
     " set popup window as leaderf window if vim version is 8.1.1615 or above
     if has('patch-8.1.1615')
         let g:Lf_WindowPosition = 'popup'
@@ -226,7 +251,17 @@ else
     " key map for open leaderf search window
     let g:Lf_ShortcutF = "<leader>ff"
     let g:Lf_ShortcutB = "<leader>fb"
-    nnoremap <C-p> :LeaderfFile<CR>
+    nmap <Leader>fm  :LeaderfFunction<CR>
+    nmap <Leader>fam :LeaderfFunctionAll<CR>
+    nmap <Leader>fam :LeaderfFunctionAll<CR>
+    nmap <Leader>fr  ::LeaderfRgInteractive<CR>
+    nnoremap <C-p>   :LeaderfFile<CR>
+    let g:Lf_CommandMap = {
+        \   '<C-K>': ['<Up>'],
+        \   '<C-J>': ['<Down>'],
+        \   '<Up>': ['<C-P>'],
+        \   '<Down>': ['<C-N>'],
+        \}
 endif
 
 "" settings for NERDTree plugin and sub-plugins

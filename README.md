@@ -193,8 +193,10 @@ This will remove the installed configuration files from your `$HOME` directory.
   | `:CscopeReload<CR>` | Try to find cscope database in `pwd` and reload it | Project-configured |
   | `:Helptags<CR>` | Generate vim help documents for installed plugins | pathogen.vim |
   | `:Ack {pattern}<CR>` | Fast project search (uses `ag` if available) | ack.vim |
-  | `:LeaderfFiles<CR>` | Fuzzy file finder | leaderf |
-  | `:LeaderfBuffer<CR>` | Fuzzy buffer finder | leaderf |
+  | `:LeaderfFiles<CR>` | Open fuzzy file finder | ctrlp / leaderf |
+  | `:LeaderfBuffer<CR>` | Open fuzzy buffer finder | ctrlp / leaderf |
+  | `:LeaderfFunction<CR>` | Open fuzzy function finder for current buffer | leaderf |
+  | `:LeaderfFunctionAll<CR>` | Open fuzzy function finder for all loaded buffers | leaderf |
   | `:Cppman! {symbol}<CR>` | Open C manual for symbol | vim-cppman |
   | `:Cppman {symbol}<CR>` | Open C++ manual for symbol | vim-cppman |
 
@@ -206,7 +208,7 @@ This will remove the installed configuration files from your `$HOME` directory.
   | `<C-W> j` | Jump to the window below | Built-in |
   | `<C-W> k` | Jump to the window above | Built-in |
   | `<C-W> l` | Jump to the window right | Built-in |
-  | `<C-P>` | Open fuzzy file finder of leaderf | Project-configured |
+  | `<C-P>` | Open fuzzy file finder | ctrlp / leaderf |
   | `<C-X><C-O>` | Trigger omni-completion (C/C++ via OmniCppComplete) | OmniCppComplete |
 
   ---
@@ -235,16 +237,21 @@ This will remove the installed configuration files from your `$HOME` directory.
   | `<Leader>cn` | Jump to next result of quickfix window | Project-configured |
   | `<Leader>cp` | Jump to previous result of quickfix window | Project-configured |
   | `<Leader>cl` | Show result list in quickfix window | Project-configured |
-  | `<Leader>ff` | Open fuzzy file finder of leaderf | Project-configured |
-  | `<Leader>fb` | Open fuzzy buffer finder of leaderf | Project-configured |
   | `<Leader>a` | Switch between source/header file (C/C++) | a.vim |
   | `<Leader>n` | Toggle file explorer sidebar | NERDTree |
   | `<Leader>m` | Toggle source tag browser | taglist.vim |
+  | `<Leader>ff` | Open fuzzy file finder | ctrlp / leaderf |
+  | `<Leader>fb` | Open fuzzy buffer finder | ctrlp / leaderf |
+  | `<Leader>fm` | Open fuzzy function finder for current buffer | leaderf |
+  | `<Leader>fam` | Open fuzzy function finder for all loaded buffers | leaderf |
+  | `<Leader>fr` | Launch leaderf to use rg interactively | leaderf |
 
 > Notes:  
   Built-in commands work in any Vim. Plugin-provided commands may require the plugin to be installed and loaded (they are included in this project).  
-  To find exact commands for a plugin, open its docs under ~/.vim/bundle/{plugin}/doc or use `:Helptags` after installing bundles.
-
+  To find exact commands for a plugin, open its docs under ~/.vim/bundle/{plugin}/doc or use `:Helptags` after installing bundles.  
+  If Python support is not available in Vim or Vim version is below 7.4.1126, Leaderf plugin is inactive and CtrlP plugin is fallback to active, otherwise CtrlP plugin is disabled.  
+  Check Python support with `:echo has('python')` or `:echo has('python3')` in Vim command mode.  
+  Check Vim version with `:version` in Vim command mode.
 
 ## Requirements
 
@@ -252,7 +259,7 @@ In order to make PowerBash works properly, ensure you have the following tools i
 - `git`
 - `tmux` (almost versions is compatible, but 3.4 and above recommended)
 - `vim` (almost versions is compatible, but 8.1 and above recommended)
-- `python3` (for various Vim plugins)
+- `python2/3` (for various Vim plugins)
 
 And to make full use of all features, it's recommended to also have the following tools:
 - `ack` or `ag` (for fast searching in Vim)
@@ -284,6 +291,7 @@ This project is inspired by and adapted or reused from the following excellent r
 - [a.vim](https://github.com/vim-scripts/a.vim)
 - [ack.vim](https://github.com/mileszs/ack.vim)
 - [auto-pairs](https://github.com/jiangmiao/auto-pairs)
+- [ctrlp.vim](https://github.com/ctrlpvim/ctrlp.vim)
 - [dracula.vim](https://github.com/dracula/vim)
 - [indentLine](https://github.com/Yggdroot/indentLine)
 - [leaderF](https://github.com/Yggdroot/LeaderF)
@@ -299,6 +307,7 @@ This project is inspired by and adapted or reused from the following excellent r
 - [vim-dict](https://github.com/skywind3000/vim-dict)
 - [vim-gitbranch](https://github.com/itchyny/vim-gitbranch)
 - [vim-gitgutter](https://github.com/airblade/vim-gitgutter)
+- [vim-gutentags](https://github.com/ludovicchabant/vim-gutentags)
 - [vim-plugin-AnsiEsc](https://github.com/powerman/vim-plugin-AnsiEsc.git)
 - [vim-polyglot](https://github.com/sheerun/vim-polyglot)
 - [xterm-color-table.vim](https://github.com/guns/xterm-color-table.vim)

@@ -88,3 +88,6 @@
 [submodule "HOME/.vim/bundle/vim-gutentags"]
 	path = HOME/.vim/bundle/vim-gutentags
 	url = https://github.com/sheer-rey/vim-gutentags.git
+[submodule "HOME/.vim/bundle/ctrlp.vim"]
+	path = HOME/.vim/bundle/ctrlp.vim
+	url = https://github.com/sheer-rey/ctrlp.vim.git
