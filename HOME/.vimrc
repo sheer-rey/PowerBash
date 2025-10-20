@@ -167,9 +167,11 @@ let g:lightline = {
     \}
 
 "" settings for vim-gutentags plugin
-if !executable('ctags')
+if !executable('ctags') || !has('job')
     " disable gutentags plugin if ctags is not avaliable
     let g:gutentags_dont_load = 1
+    " Fallback to set this variable with more markers for compatible with ctrlp and leaderf plugins
+    let g:gutentags_project_root = ['.vscode', '.notags', '.gutctags', '.gutgtags', '.projroot', '.git', '.hg', '.svn', '.bzr', '_darcs', '_FOSSIL_', '.fslckout']
 else
     " detect and enable gutentags modules according to available tools
     if executable('gtags-cscope')
