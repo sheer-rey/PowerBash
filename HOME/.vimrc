@@ -172,6 +172,10 @@ if !executable('ctags') || !has('job')
     let g:gutentags_dont_load = 1
     " Fallback to set this variable with more markers for compatible with ctrlp and leaderf plugins
     let g:gutentags_project_root = ['.vscode', '.notags', '.gutctags', '.gutgtags', '.projroot', '.git', '.hg', '.svn', '.bzr', '_darcs', '_FOSSIL_', '.fslckout']
+    " Fallack to set key map for manually setup cscope database
+    command! CscopeReload call tagshelper#setup_cscope()
+    " Fallback to setup cscope database while vim started
+    autocmd VimEnter * call tagshelper#setup_cscope()
 else
     " detect and enable gutentags modules according to available tools
     if executable('gtags-cscope')
@@ -193,7 +197,7 @@ else
     " disable ctrlp plugin root markers addition while gutentags updating project root markers
     let g:gutentags_add_ctrlp_root_markers = 0
     " detect ctags implementation and set gutentags ctags label to GTAGSLABEL environment variable
-    let $GTAGSLABEL = ctagslabel#get_gtags_label()
+    let $GTAGSLABEL = tagshelper#get_gtags_label()
     " refresh lightline statusline while gutentags updating or updated
     augroup GutentagsStatusLineRefresher
             autocmd!
@@ -270,10 +274,8 @@ endif
 let NERDTreeWinPos = "left"     " set NERDTree window position to left
 let NERDTreeShowHidden = 1      " set NERDTree window show hidden files
 """ close the tab if NERDTree is the only window remaining in it.
-if has("autocmd")
-    autocmd BufEnter *
-    \   if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
-endif
+autocmd BufEnter * if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit
+
 """ key map for toggle NERDTree window
 nnoremap <leader>n :NERDTreeToggle<CR>
 """ set git status indicator for NERDtree-git-plugin
@@ -330,28 +332,24 @@ if !has('patch-7.4.775')
 endif
 
 "" settings for vim-cppman plugin
-if has("autocmd")
-    "" set keywordprg to Cppman for c/c++ files while vim version is 8.1 or above
-    if v:version >= 801
-        autocmd FileType c setlocal keywordprg=:Cppman!
-        autocmd FileType cpp setlocal keywordprg=:Cppman
-    endif
+if v:version >= 801
+    " set keywordprg to Cppman for c/c++ files while vim version is 8.1 or above
+    autocmd FileType c setlocal keywordprg=:Cppman!
+    autocmd FileType cpp setlocal keywordprg=:Cppman
 endif
 
 " ================================================================================================ "
 " register plugin-independent autocmd events
 " ================================================================================================ "
-if has("autocmd")
-    "" let cursor return to the position before the file closed when it's reopened
-    autocmd BufReadPost *
+"" let cursor return to the position before the file closed when it's reopened
+autocmd BufReadPost *
     \   if line("'\"") > 0 && line("$") > 1 && line ("'\"") <= line("$") |
     \       execute "normal! g'\"" |
     \   endif
-    "" set commentstring to '// ' for c/c++ files
-    autocmd FileType c,cpp setlocal commentstring=//\ %s
-    "" do not expand tab to spaces while filetype is Makefile
-    autocmd FileType Makefile setlocal noexpandtab
-endif
+"" set commentstring to '// ' for c/c++ files
+autocmd FileType c,cpp setlocal commentstring=//\ %s
+"" do not expand tab to spaces while filetype is Makefile
+autocmd FileType Makefile setlocal noexpandtab
 
 " ================================================================================================ "
 " support yank to remote terminal via osc52 escape sequence

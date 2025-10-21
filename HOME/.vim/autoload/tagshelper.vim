@@ -1,6 +1,6 @@
 " ================================================================================================ "
-" @file     ctagslabel.vim
-" @brief    Detect ctags implementation (Universal vs Exuberant) and set GTAGSLABEL accordingly.
+" @file     tagshelper.vim
+" @brief    
 "
 " @author   sheer.rey<sheer.rey@gmail.com>
 " @date     10/18/2025
@@ -30,10 +30,10 @@ endfunction
 " public functions
 " ================================================================================================ "
 
-" Function: ctagslabel#detect_label
+" Function: tagshelper#detect_label
 " Brief: Detect whether the installed 'ctags' is Exuberant or Universal.
 " Returns: 'ctags-exuberant', 'ctags-universal', or empty string if undetectable.
-function! ctagslabel#detect_label() abort
+function! tagshelper#detect_label() abort
     " Initialize label to empty
     let l:label = ''
 
@@ -52,11 +52,11 @@ function! ctagslabel#detect_label() abort
     return l:label
 endfunction
 
-" Function: ctagslabel#get_gtags_label
+" Function: tagshelper#get_gtags_label
 " Brief: Get the GTAGSLABEL value based on detected ctags implementation.
 " Returns: 'new-ctags' for Universal, 'ctags' for Exuberant, or 'default' if undetectable.
-function! ctagslabel#get_gtags_label() abort
-    let l:label = ctagslabel#detect_label()
+function! tagshelper#get_gtags_label() abort
+    let l:label = tagshelper#detect_label()
     if !empty(l:label)
         if l:label ==# 'ctags-universal'
             return 'new-ctags'
@@ -65,5 +65,39 @@ function! ctagslabel#get_gtags_label() abort
         endif
     else
         return 'default'
+    endif
+endfunction
+
+" Function: tagshelper#setup_cscope
+" Brief: Setup cscope database in Vim, preferring gtags-cscope if available.
+"        Searches for 'GTAGS' or 'cscope.out' in the current directory and parents.
+" Notes: Call this function after opening a project in Vim to enable cscope support.
+"        If a cscope database is found, it is added to Vim's cscope connections.
+"        If no database is found, a message is displayed.
+function! tagshelper#setup_cscope() abort
+    let l:prefer_gtags_cscope = 0
+    let l:cscope_file = ''
+
+    " Prefer gtags-cscope if available
+    if executable('gtags-cscope')
+        let l:cscope_file = findfile('GTAGS', '.;')
+        if !empty(l:cscope_file)
+            let l:prefer_gtags_cscope = 1
+            set cscopeprg='gtags-cscope'
+        endif
+    endif
+
+    " Fallback to standard cscope.out if gtags-cscope not preferred or not found
+    if !l:prefer_gtags_cscope
+        let l:cscope_file = findfile('cscope.out', '.;')
+    endif
+
+    " If a cscope database file is found, add it to Vim's cscope connections
+    if !empty(l:cscope_file)
+        silent! cscope kill -1
+        execute 'silent! cscope add ' . fnameescape(l:cscope_file)
+        echomsg '[cscope] Setup database with ' . l:cscope_file
+    else
+        echomsg '[cscope] Database not found'
     endif
 endfunction
