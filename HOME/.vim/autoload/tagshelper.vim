@@ -1,6 +1,6 @@
 " ================================================================================================ "
 " @file     tagshelper.vim
-" @brief    
+" @brief    Helper functions for detecting ctags implementation and setting up cscope in Vim.
 "
 " @author   sheer.rey<sheer.rey@gmail.com>
 " @date     10/18/2025
@@ -91,13 +91,15 @@ function! tagshelper#setup_cscope() abort
     if !l:prefer_gtags_cscope
         let l:cscope_file = findfile('cscope.out', '.;')
     endif
+    
+    " If cscope database file is not found, notify the user and exit
+    if empty(l:cscope_file)
+        echomsg '[cscope] Database not found'
+        return
+    endif
 
     " If a cscope database file is found, add it to Vim's cscope connections
-    if !empty(l:cscope_file)
-        silent! cscope kill -1
-        execute 'silent! cscope add ' . fnameescape(l:cscope_file)
-        echomsg '[cscope] Setup database with ' . l:cscope_file
-    else
-        echomsg '[cscope] Database not found'
-    endif
+    silent! cscope kill -1
+    execute 'silent! cscope add ' . fnameescape(l:cscope_file) . ' ' . fnameescape(fnamemodify(l:cscope_file, ':h'))
+    echomsg '[cscope] Setup database with ' . l:cscope_file
 endfunction
