@@ -274,7 +274,7 @@ endif
 let NERDTreeWinPos = "left"     " set NERDTree window position to left
 let NERDTreeShowHidden = 1      " set NERDTree window show hidden files
 """ close the tab if NERDTree is the only window remaining in it.
-autocmd BufEnter * if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit
+autocmd BufEnter * if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
 
 """ key map for toggle NERDTree window
 nnoremap <leader>n :NERDTreeToggle<CR>
