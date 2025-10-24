@@ -237,6 +237,19 @@ if ! shopt -oq posix; then
     fi
 fi
 
+# override the default man pager with bat while bat is installed
+# this will also set alias 'bat' to 'batcat' in the case that some distros
+# like Arch Linux or Debian use 'batcat' as the binary name for bat
+if \bat --version &> /dev/null || \batcat --version &> /dev/null; then
+    BAT_EXEC=bat
+    if ! \bat --version &> /dev/null; then
+        BAT_EXEC=batcat
+        alias bat=batcat
+    fi
+    export MANPAGER="sh -c 'awk '\''{ gsub(/\x1B\[[0-9;]*m/, \"\", \$0); gsub(/.\x08/, \"\", \$0); print }'\'' | ${BAT_EXEC} -p -lman'"
+    unset BAT_EXEC
+fi
+
 # export functions or variables
 export -f osc_yank
 export VISUAL=vim
