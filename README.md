@@ -24,6 +24,7 @@ for convenience, clarity, and efficiency.
 - **Colorful and Informative:**  
   - Color support for prompt, `ls`, `grep`, and GCC output.
   - Handy aliases for `ls`, `grep`, and more.
+  - Syntax highlighting for `man` pages, supported by `bat`.
 - **Automatic Sourcing:**  
   - Loads additional aliases from `~/.bash_aliases` if present.
   - Enables programmable completion if available.
@@ -82,7 +83,7 @@ for convenience, clarity, and efficiency.
 
 ## Installation
 
-1. **Clone the repository:**
+1. **Clone the repository with submodules:**
     ```bash
     git clone --recurse-submodules https://github.com/sheer-rey/PowerBash.git
     ```
@@ -262,6 +263,7 @@ In order to make PowerBash works properly, ensure you have the following tools i
 - `python2/3` (for various Vim plugins)
 
 And to make full use of all features, it's recommended to also have the following tools:
+- `bat` (for syntax highlighting in `man` pages)
 - `ack` or `ag` (for fast searching in Vim)
 - `ctags` (for taglist and code navigation in Vim)
 - `cscope` (for code navigation in Vim)
@@ -272,7 +274,7 @@ And to make full use of all features, it's recommended to also have the followin
 
 With Ubuntu22.04 or later, you can install these tools using:
 ```bash
-sudo apt install -y git tmux vim python3 ack silversearcher-ag universal-ctags cscope global ripgrep cppman
+sudo apt install -y git tmux vim python3 bat ack silversearcher-ag universal-ctags cscope global ripgrep cppman
 ```
 
 
