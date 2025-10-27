@@ -147,27 +147,27 @@ This will remove the installed configuration files from your `$HOME` directory.
 
   | Keys | Action | Notes |
   |------|--------|-------|
-  | `Prefix+E c` | Create new window | Opens a new tmux window |
-  | `Prefix+E &` | Kill current window | Prompts for confirmation |
-  | `Prefix+E n` | Next window | Cycle to the next window |
-  | `Prefix+E p` | Previous window | Cycle to the previous window |
-  | `Prefix+E <Num>` | Choose window | |
-  | `Prefix+E ,` | Rename window | Prompts for a new window name |
-  | `Prefix+E .` | Move window | Prompt for destination index |
-  | `Prefix+E %` | Split pane vertically | Creates a vertical split |
-  | `Prefix+E "` | Split pane horizontally | Creates a horizontal split |
-  | `Prefix+E o` | Select next pane | Cycle focus to the next pane |
-  | `Prefix+E ;` | Select previous pane | Cycle focus to the previous pane |
-  | `Prefix+E z` | Toggle pane zoom | Zooms the current pane |
-  | `Prefix+E x` | Kill current pane | Closes the active pane |
-  | `Prefix+E {` | Swap pane left/up | Swap current pane with previous |
-  | `Prefix+E }` | Swap pane right/down | Swap current pane with next |
-  | `Prefix+E [` | Enter copy mode | Navigate and copy text in history |
-  | `Prefix+E ]` | Paste buffer | Paste the tmux buffer into pane |
-  | `Prefix+E r` | Reload config | Reload `~/.tmux.conf` without restarting |
-  | `Prefix+E d` | Detach session | Detach from the current tmux session |
-  | `Prefix+E s` | Choose session | Interactive session switcher |
-  | `Prefix+E ?` | Show key bindings | Displays configured tmux shortcuts |
+  | `Prefix c` | Create new window | Opens a new tmux window |
+  | `Prefix &` | Kill current window | Prompts for confirmation |
+  | `Prefix n` | Next window | Cycle to the next window |
+  | `Prefix p` | Previous window | Cycle to the previous window |
+  | `Prefix <Num>` | Choose window | |
+  | `Prefix ,` | Rename window | Prompts for a new window name |
+  | `Prefix .` | Move window | Prompt for destination index |
+  | `Prefix %` | Split pane vertically | Creates a vertical split |
+  | `Prefix "` | Split pane horizontally | Creates a horizontal split |
+  | `Prefix o` | Select next pane | Cycle focus to the next pane |
+  | `Prefix ;` | Select previous pane | Cycle focus to the previous pane |
+  | `Prefix z` | Toggle pane zoom | Zooms the current pane |
+  | `Prefix x` | Kill current pane | Closes the active pane |
+  | `Prefix {` | Swap pane left/up | Swap current pane with previous |
+  | `Prefix }` | Swap pane right/down | Swap current pane with next |
+  | `Prefix [` | Enter copy mode | Navigate and copy text in history |
+  | `Prefix ]` | Paste buffer | Paste the tmux buffer into pane |
+  | `Prefix r` | Reload config | Reload `~/.tmux.conf` without restarting |
+  | `Prefix d` | Detach session | Detach from the current tmux session |
+  | `Prefix s` | Choose session | Interactive session switcher |
+  | `Prefix ?` | Show key bindings | Displays configured tmux shortcuts |
 
 > Notes:  
   Default Prefix is `Ctrl+B`, configured Prefix is `Alt+E`.  
