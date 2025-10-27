@@ -76,6 +76,7 @@ for convenience, clarity, and efficiency.
   - **vim-dict:** Dictionary support for Vim.
   - **vim-gitbranch:** Git branch info for statuslines.
   - **vim-gitgutter:** Git diff indicators in the sign column.
+  - **vim-gutentags:** Automatic tag file management.
   - **vim-plugin-AnsiEsc:** ANSI escape sequence highlighting.
   - **vim-polyglot:** Language pack for Vim.
   - **xterm-color-table.vim:** Color table utility.
