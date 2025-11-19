@@ -346,6 +346,9 @@ autocmd BufReadPost *
     \   if line("'\"") > 0 && line("$") > 1 && line ("'\"") <= line("$") |
     \       execute "normal! g'\"" |
     \   endif
+"" do not hidden concealed text while filetype is markdown, use BufEnter event to make sure
+"" conceallevel setting be valid
+autocmd BufEnter * if &filetype ==# 'markdown' | setlocal conceallevel=0 | endif
 "" set commentstring to '// ' for c/c++ files
 autocmd FileType c,cpp setlocal commentstring=//\ %s
 "" do not expand tab to spaces while filetype is Makefile

@@ -39,6 +39,7 @@ files=(
     ".gitignore"
     ".gitmessage"
     ".tmux.conf"
+    ".clang-format"
 )
 dirs=(
     ".vim"

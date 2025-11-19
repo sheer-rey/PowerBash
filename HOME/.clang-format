@@ -1,0 +1,89 @@
+# global configurations for clang-format
+
+# Base Style
+BasedOnStyle: Google
+
+# Tab
+TabWidth: 4
+UseTab: Never
+
+# Indent
+IndentWidth: 4
+AccessModifierOffset: -3
+ContinuationIndentWidth: 4
+IndentCaseBlocks: true
+IndentCaseLabels: true
+
+# Column Limits
+ColumnLimit: 100
+
+# Comments
+ReflowComments: true
+SpacesBeforeTrailingComments: 1
+CommentPragmas: '^[/!]<? '
+
+# Aligns
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments:
+  Enabled: true
+  AlignCompound: true
+  PadOperators: true
+AlignConsecutiveBitFields: Consecutive
+AlignConsecutiveMacros: Consecutive
+AlignEscapedNewlines: Right
+AlignArrayOfStructures: Left
+AlignOperands: AlignAfterOperator
+AlignTrailingComments: Always
+
+# Short Code Blocks
+AllowShortBlocksOnASingleLine: Always
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: true
+
+# Code Blocks Separate
+IncludeBlocks: Preserve
+SeparateDefinitionBlocks: Always
+
+# Code Blocks Sort
+SortIncludes: CaseSensitive
+SortUsingDeclarations: Lexicographic
+
+# Function Calls
+AllowAllArgumentsOnNextLine: false
+BinPackArguments: false
+
+# Namespaces
+CompactNamespaces: true
+FixNamespaceComments: true
+ShortNamespaceLines: 0
+
+# Line Breaks
+BreakBeforeBinaryOperators: All
+BreakBeforeTernaryOperators: true
+# BreakBinaryOperations: RespectPrecedence
+BreakConstructorInitializers: AfterColon
+BreakStringLiterals: true
+
+# Line Formats
+EmptyLineBeforeAccessModifier: Always
+InsertNewlineAtEOF: true
+LineEnding: LF
+
+# Penalties
+PenaltyBreakAssignment: 200
+PenaltyBreakBeforeFirstCallParameter: 100
+# PenaltyBreakComment: 300
+# PenaltyBreakFirstLessLess: 120
+PenaltyBreakOpenParenthesis: 100
+# PenaltyBreakScopeResolution: 500
+# PenaltyBreakString: 1000
+# PenaltyBreakTemplateDeclaration: 10
+# PenaltyExcessCharacter: 1000000
+# PenaltyIndentedWhitespace: 0
+# PenaltyReturnTypeOnItsOwnLine: 200
+
+
