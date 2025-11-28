@@ -308,6 +308,12 @@ let OmniCpp_SelectFirstItem     = 2 " automatically select the first result in c
 "" settings for rainbow plugin
 """ enable rainbow plugin by default, set to 0, enable it via :RainbowToggle
 let g:rainbow_active = 1
+""" disable rainbow plugin for cmake filetype to prevent conflict with vim-polyglot plugin
+let g:rainbow_conf = {
+    \   'separately': {
+    \       'cmake': 0,
+    \   }
+    \}
 
 "" settings for taglist.vim plugin
 if !executable('ctags')
