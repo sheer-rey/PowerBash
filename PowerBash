@@ -43,6 +43,7 @@ files=(
 )
 dirs=(
     ".vim"
+    ".config/clangd"
 )
 dependencies=(
     "vim"          # configuration required
@@ -140,13 +141,15 @@ function DoInstall {
         for file in ${files[@]}; do
             if [ -f "$install_path/$file" ]; then
                 PrintInfo "${font_yellow}Found file $install_path/$file${font_reset}"
-                cp "$install_path/$file" $temp_dir/
+                mkdir -p "$(dirname "$temp_dir/$file")"
+                cp "$install_path/$file" "$temp_dir/$file"
             fi
         done
         for dir in ${dirs[@]}; do
             if [ -d "$install_path/$dir" ]; then
                 PrintInfo "${font_yellow}Found directory $install_path/$dir${font_reset}"
-                cp -r "$install_path/$dir" $temp_dir/
+                mkdir -p "$(dirname "$temp_dir/$dir")"
+                cp -rf "$install_path/$dir" "$temp_dir/$dir"
             fi
         done
 
@@ -182,17 +185,17 @@ function DoInstall {
         local temp_dir=$(mktemp -d)
         tar -xzf "$install_archive" -C $temp_dir >&/dev/null
         for file in ${files[@]}; do
-            if ! [ -e "$temp_dir/$file" ]; then
-                PrintError "specified archive file $install_archive is not valid, install canceled!"
-                rm -rf $temp_dir
-                exit 2
+            if [ -f "$temp_dir/$file" ]; then
+                PrintDebug "found file $file in specified archive file $install_archive!"
+            else
+                PrintWarning "file $file not found in specified archive file $install_archive!"
             fi
         done
         for dir in ${dirs[@]}; do
-            if ! [ -e "$temp_dir/$dir" ]; then
-                PrintError "specified archive file $install_archive is not valid, install canceled!"
-                rm -rf $temp_dir
-                exit 2
+            if [ -d "$temp_dir/$dir" ]; then
+                PrintDebug "found directory $dir in specified archive file $install_archive!"
+            else
+                PrintWarning "directory $dir not found in specified archive file $install_archive!"
             fi
         done
     fi
@@ -215,15 +218,24 @@ function DoInstall {
         powerbash_src_dir="$powerbash_root/HOME"
     fi
     for file in ${files[@]}; do
-        rm -f "$install_path/$file"
-        cp -f "$powerbash_src_dir/$file" "$install_path/"
+        if [ -e "$powerbash_src_dir/$file" ]; then
+            PrintDebug "Installing file $file into $install_path ..."
+            rm -f "$install_path/$file"
+            mkdir -p "$(dirname "$install_path/$file")"
+            cp -f "$powerbash_src_dir/$file" "$install_path/$file"
+        fi
     done
     for dir in ${dirs[@]}; do
-        rm -rf "$install_path/$dir"
-        cp -rf "$powerbash_src_dir/$dir" "$install_path/"
+        if [ -e "$powerbash_src_dir/$dir" ]; then
+            PrintDebug "Installing directory $dir into $install_path ..."
+            rm -rf "$install_path/$dir"
+            mkdir -p "$(dirname "$install_path/$dir")"
+            cp -rf "$powerbash_src_dir/$dir" "$install_path/$dir"
+        fi
     done
 
     # check and append 'source .powerbashrc' statement
+    PrintDebug "Ejecting powerbash runtime configuration ..."
     sed -i "/$source_comment_begin/,/$source_comment_end/d" $bashrc_file
     if [ -n "$(tail -n 1 $bashrc_file)" ]; then echo "" >> $bashrc_file; fi
     echo "$source_comment_begin" >> $bashrc_file
@@ -234,6 +246,7 @@ function DoInstall {
     if [ -n "$install_archive" ]; then rm -rf $temp_dir; fi
 
     # Generate vim help documents for new installed plugins
+    PrintDebug "Generating help documents for vim plugins ..."
     if vim -h &> /dev/null; then
         vim -c 'Helptags' -c 'q'
     fi
@@ -267,14 +280,14 @@ function DoUninstall {
         if [ -f "$uninstall_path/$file" ]; then
             PrintInfo "${font_yellow}Found file $uninstall_path/$file${font_reset}"
             conf_list[$conf_index]="$uninstall_path/$file"
-            let conf_index++
+            let ++conf_index
         fi
     done
     for dir in ${dirs[@]}; do
         if [ -d "$uninstall_path/$dir" ]; then
             PrintInfo "${font_yellow}Found directory $uninstall_path/$dir${font_reset}"
             conf_list[$conf_index]="$uninstall_path/$dir"
-            let conf_index++
+            let ++conf_index
         fi
     done
 
@@ -283,6 +296,7 @@ function DoUninstall {
     rm -rf "${conf_list[@]}"
 
     # check and remove 'source .powerbashrc' statement
+    PrintDebug "Removing powerbash runtime configuration ..."
     sed -i "/$source_comment_begin/,/$source_comment_end/d" $bashrc_file
 
     # print character picture message
@@ -376,6 +390,10 @@ if [ -n "$uninstall_path" ]; then
 fi
 
 ## do options
+enable_error_tracing
+
 if [ -n "$install_path" ]; then DoInstall; fi
 if [ -n "$uninstall_path" ]; then DoUninstall; fi
+
+disable_error_tracing
 

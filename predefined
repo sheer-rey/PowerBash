@@ -75,9 +75,11 @@ if ! tput setaf 1 &>/dev/null || ! [ -t 1 ] || [ "$TERM" == "dumb" ]; then
     done
 fi
 
+# log print function definitions
+
 # SC_LOG_LEVEL variable to control log level
 # Possible values: "quiet", "error", "warning", "info", "debug"
-SC_LOG_LEVEL=${SC_LOG_LEVEL:="info"}
+SC_LOG_LEVEL=${SC_LOG_LEVEL:-"info"}
 declare -A LOG_LEVELS=( ["quiet"]=0 ["error"]=1 ["warning"]=2 ["info"]=3 ["debug"]=4 )
 
 ## @brief print formatted error message to stderr
@@ -116,7 +118,97 @@ function PrintDebug {
     fi
 }
 
-# function definitions
+# error tracing function definitions
+
+## @brief error trap handler function
+##
+## This function will be called when an error occurs in the script.
+## It prints the error message, the command that caused the error, and the function call stack.
+function _error_trap_handler {
+    # print error message
+    local rc=$?
+    local cmd="${BASH_COMMAND}"
+    echo "" >&2
+    printf "${font_red}Command '${cmd}' error with exit code ${rc}${font_reset}\n" >&2
+    printf "${font_red}Occurred at %s:%s${font_reset}\n" "${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}" "${BASH_LINENO[0]:-?}" >&2
+
+    # print function call stack
+    local i
+    local depth=${#FUNCNAME[@]}
+    echo "" >&2
+    printf "${font_red}Function call stack (most recent call first):${font_reset}\n" >&2
+    for ((i = 0; i < depth; i++)); do
+        local func="${FUNCNAME[$i]}"
+        local file="${BASH_SOURCE[$((i+1))]:-}"
+        local line="${BASH_LINENO[$i]:-}"
+        if (( i < depth - 1 )); then
+            printf "${font_red}  [%2d]  %s()  called at %s:%s${font_reset}\n" "$i" "${func}" "${file:-?}" "${line:-?}" >&2
+        else
+            printf "${font_red}  [%2d]  main script${font_reset}\n" "$i" >&2
+        fi
+    done
+
+    return ${rc}
+}
+
+# previous shell options and settings
+_PREV_ERR_TRAP=""
+_PREV_ERREXIT_SET=0
+_PREV_NOUNSET_SET=0
+_PREV_PIPEFAIL_SET=0
+
+## @brief enable error tracing
+## This function enables error tracing by setting a trap on the ERR signal and enable shell strict
+## mode with shell options 'errexit', 'nounset', and 'pipefail'.
+## It also saves the previous shell options and settings to restore them later.
+function enable_error_tracing {
+    # save previous trap handler and set the new one
+    _PREV_ERR_TRAP="$(trap -p ERR 2>/dev/null)"
+    trap '_error_trap_handler' ERR
+
+    # save previous error settings
+    [[ -o errexit ]] && _PREV_ERREXIT_SET=1 || _PREV_ERREXIT_SET=0
+    [[ -o nounset ]] && _PREV_NOUNSET_SET=1 || _PREV_NOUNSET_SET=0
+    ( set -o | grep -q "pipefail.*on" ) && _PREV_PIPEFAIL_SET=1 || _PREV_PIPEFAIL_SET=0
+
+    # set shell options to enable strict mode
+    # 1. exit on error and inherit errexit in functions
+    # 2. treat unset variables as errors
+    # 3. fail on pipe errors
+    set -Eeuo pipefail
+    export _ERROR_TRACING_ENABLED=1
+}
+
+## @brief disable error tracing
+## This function disables error tracing by restoring the previous trap handler and shell options
+## and settings.
+function disable_error_tracing {
+    # restore previous ERR trap (if any)
+    if [[ -n "${_PREV_ERR_TRAP:-}" ]]; then
+        eval "${_PREV_ERR_TRAP}"
+    else
+        trap - ERR
+    fi
+
+    # restore shell options (as much as possible)
+    [[ "${_PREV_ERREXIT_SET}" -eq 1 ]] && set -e || set +e
+    [[ "${_PREV_NOUNSET_SET}" -eq 1 ]] && set -u || set +u
+    [[ "${_PREV_PIPEFAIL_SET}" -eq 1 ]] && set -o pipefail || set +o pipefail
+
+    unset _ERROR_TRACING_ENABLED
+}
+
+# commonly used function definitions
+
+## @brief get recommended concurrency build jobs based on CPU cores and memory size
+##
+## @return recommended concurrency build jobs number
+function GetConcurrencyBuildJobs {
+    local cpu_cores=$(nproc)
+    local mem_gib=$(free -g | awk '/^Mem/{ print $2 }')
+    local recommended_jobs=$(( cpu_cores < mem_gib ? cpu_cores : mem_gib ))
+    echo $recommended_jobs
+}
 
 ## @brief parse argument via getopt tool
 ##
