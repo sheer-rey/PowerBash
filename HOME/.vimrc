@@ -260,7 +260,7 @@ else
     nmap <Leader>fm  :LeaderfFunction<CR>
     nmap <Leader>fam :LeaderfFunctionAll<CR>
     nmap <Leader>fam :LeaderfFunctionAll<CR>
-    nmap <Leader>fr  ::LeaderfRgInteractive<CR>
+    nmap <Leader>fr  :LeaderfRgInteractive<CR>
     nnoremap <C-p>   :LeaderfFile<CR>
     let g:Lf_CommandMap = {
         \   '<C-K>': ['<Up>'],
