@@ -204,6 +204,8 @@ else
             autocmd User GutentagsUpdating call lightline#update()
             autocmd User GutentagsUpdated call lightline#update()
     augroup END
+    " exclude specific filetypes
+    let g:gutentags_exclude_filetypes = ['vim', 'gitcommit', 'gitrebase']
 endif
 
 "" settings for leaderf and ctrlp plugin
