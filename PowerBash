@@ -138,14 +138,14 @@ function DoInstall {
 
         PrintInfo "${font_magenta}Looking for existing configurations ...${font_reset}"
         local temp_dir=$(mktemp -d)
-        for file in ${files[@]}; do
+        for file in "${files[@]}"; do
             if [ -f "$install_path/$file" ]; then
                 PrintInfo "${font_yellow}Found file $install_path/$file${font_reset}"
                 mkdir -p "$(dirname "$temp_dir/$file")"
                 cp "$install_path/$file" "$temp_dir/$file"
             fi
         done
-        for dir in ${dirs[@]}; do
+        for dir in "${dirs[@]}"; do
             if [ -d "$install_path/$dir" ]; then
                 PrintInfo "${font_yellow}Found directory $install_path/$dir${font_reset}"
                 mkdir -p "$(dirname "$temp_dir/$dir")"
@@ -184,14 +184,14 @@ function DoInstall {
         fi
         local temp_dir=$(mktemp -d)
         tar -xzf "$install_archive" -C $temp_dir >&/dev/null
-        for file in ${files[@]}; do
+        for file in "${files[@]}"; do
             if [ -f "$temp_dir/$file" ]; then
                 PrintDebug "found file $file in specified archive file $install_archive!"
             else
                 PrintWarning "file $file not found in specified archive file $install_archive!"
             fi
         done
-        for dir in ${dirs[@]}; do
+        for dir in "${dirs[@]}"; do
             if [ -d "$temp_dir/$dir" ]; then
                 PrintDebug "found directory $dir in specified archive file $install_archive!"
             else
@@ -201,7 +201,7 @@ function DoInstall {
     fi
 
     # check dependent tools' existance
-    for dep in ${dependencies[@]}; do
+    for dep in "${dependencies[@]}"; do
         if ! which $dep >&/dev/null; then
             PrintWarning "%b%s" \
                          "missing ${font_yellow}$dep${font_reset} tool, " \
@@ -210,14 +210,14 @@ function DoInstall {
     done
 
     # install PowerBash configurations
-    PrintInfo "${font_green}Start to install PowerBash ...${font_reset}"
+    PrintInfo "${font_magenta}Start to install PowerBash ...${font_reset}"
     local powerbash_src_dir=
     if [ -n "$install_archive" ]; then
         powerbash_src_dir="$temp_dir"
     else
         powerbash_src_dir="$powerbash_root/HOME"
     fi
-    for file in ${files[@]}; do
+    for file in "${files[@]}"; do
         if [ -e "$powerbash_src_dir/$file" ]; then
             PrintDebug "Installing file $file into $install_path ..."
             rm -f "$install_path/$file"
@@ -225,7 +225,7 @@ function DoInstall {
             cp -f "$powerbash_src_dir/$file" "$install_path/$file"
         fi
     done
-    for dir in ${dirs[@]}; do
+    for dir in "${dirs[@]}"; do
         if [ -e "$powerbash_src_dir/$dir" ]; then
             PrintDebug "Installing directory $dir into $install_path ..."
             rm -rf "$install_path/$dir"
@@ -233,6 +233,21 @@ function DoInstall {
             cp -rf "$powerbash_src_dir/$dir" "$install_path/$dir"
         fi
     done
+
+    # Specialized for .gitconfig file, ask for setting user name and email and inject
+    git_cfg_file="$install_path/.gitconfig"
+    if [ -f "$git_cfg_file" ]; then
+        PrintInfo "${font_magenta}Configuring git user information ...${font_reset}"
+        read -p "Please enter your git user name: " git_user_name
+        read -p "Please enter your git user email: " git_user_email
+        if [ -n "$git_user_name" ] && [ -n "$git_user_email" ]; then
+            git config --file "$git_cfg_file" user.name "$git_user_name"
+            git config --file "$git_cfg_file" user.email "$git_user_email"
+            PrintInfo "${font_green}Git user information configured successfully!${font_reset}"
+        else
+            PrintWarning "Git user information not configured!"
+        fi
+    fi
 
     # check and append 'source .powerbashrc' statement
     PrintDebug "Ejecting powerbash runtime configuration ..."
@@ -276,14 +291,14 @@ function DoUninstall {
     PrintInfo "${font_magenta}Looking for existing configurations ...${font_reset}"
     local conf_list=
     local conf_index=0
-    for file in ${files[@]}; do
+    for file in "${files[@]}"; do
         if [ -f "$uninstall_path/$file" ]; then
             PrintInfo "${font_yellow}Found file $uninstall_path/$file${font_reset}"
             conf_list[$conf_index]="$uninstall_path/$file"
             let ++conf_index
         fi
     done
-    for dir in ${dirs[@]}; do
+    for dir in "${dirs[@]}"; do
         if [ -d "$uninstall_path/$dir" ]; then
             PrintInfo "${font_yellow}Found directory $uninstall_path/$dir${font_reset}"
             conf_list[$conf_index]="$uninstall_path/$dir"
