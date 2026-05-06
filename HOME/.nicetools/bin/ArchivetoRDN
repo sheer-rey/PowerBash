@@ -1,0 +1,215 @@
+#!/bin/bash
+####################################################################################################
+ # @file    ArchivetoRDN
+ # @brief   Archive files and transfer to RDN via SFTP.
+ #
+ # @author  sheer.rey<sheer.rey@gmail.cn>
+ # @date    06/26/2025
+ # @version 1.1
+####################################################################################################
+script_root="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+# load predefined variables and functions
+if [ -f "${script_root}/../predefined" ]; then
+    source "${script_root}/../predefined"
+else
+    echo "Error: predefined file not found in ${script_root}!" 1>&2
+    exit 1
+fi
+
+# definition of archive and info files
+archive_file="archive-$(date +%Y%m%d%H%M%S).tar.gz"
+info_file=".scd"
+declare_msg="文件为自编译内容，确认不含恶意代码及病毒内容"
+
+# definition of SFTP server and batch commands
+# Note: Replace sftp_user and sftp_host with your actual SFTP user and host.
+sftp_user=${sftp_user:="xiarui"}
+sftp_host=${sftp_host:="172.23.18.4"}
+sftp_batch=$(cat <<EOF
+cd /${sftp_user}/
+put ${archive_file}
+put ${info_file}
+bye
+EOF
+)
+
+# definition of common options
+execdir=.            # directory to perform operations
+transfer=false       # whether to transfer files to RDN immediately
+delete=false         # whether to delete archive and info files after transfer
+delete_sources=false # whether to delete source files along with archive and info files after transfer
+
+# Function to print help message
+function PrintHelp {
+    cat <<EOF
+Used for archive files and to transfer to RDN.
+Usage: $(basename "${BASH_SOURCE[0]}") [OPTIONS] <FILE1> [FILE2] ...
+
+Options:
+  -H, --host <HOST>     Specify the SFTP server host. Default is ${sftp_host}.
+  -U, --user <USER>     Specify the SFTP user. Default is ${sftp_user}.
+
+  -C, --directory <DIR> Change to directory DIR before performing any operations.
+                        Default is current directory.
+
+  -t, --transfer        Transfer the archive file to RDN via SFTP immediately,
+                        ssh pubkey authentication of remote server is required.
+                        If not specified, the script will only archive files.
+  -d, --delete          Delete the archive and ${info_file} info files after transfer.
+  -D, --delete-all      Delete source files along with archive and info files after transfer.
+
+  -h, --help            Print this help message and exit.
+EOF
+}
+
+function PrintHelpCompatible {
+    cat <<EOF
+Used for archive files and to transfer to RDN.
+Usage: $(basename "${BASH_SOURCE[0]}") [OPTIONS] <FILE1> [FILE2] ...
+
+Options:
+  -H <HOST>     Specify the SFTP server host. Default is ${sftp_host}.
+  -U <USER>     Specify the SFTP user. Default is ${sftp_user}.
+
+  -C <DIR>      Change to directory DIR before performing any operations.
+                Default is current directory.
+
+  -t            Transfer the archive file to RDN via SFTP immediately,
+                ssh pubkey authentication of remote server is required.
+                If not specified, the script will only archive files.
+  -d            Delete the archive and ${info_file} info files after transfer.
+  -D            Delete source files along with archive and info files after transfer.
+
+  -h            Print this help message and exit.
+EOF
+}
+
+# parse command line options with getopts
+sopt='H:U:C:tdDh'
+lopt='host:,user:,directory:,transfer,delete,delete-all,help'
+if ! ParseArguments "$(basename "${BASH_SOURCE[0]}")" $sopt $lopt "$@"; then exit 1; fi
+PrintDebug "Parsed arguments: $parsed_args"
+eval set -- "$parsed_args"
+
+## iterate options
+while true; do
+    case "$1" in
+        -H|--host)
+            sftp_host="$2"
+            shift 2
+            ;;
+        -U|--user)
+            sftp_user="$2"
+            shift 2
+            ;;
+        -C|--directory)
+            execdir="$2"
+            shift 2
+            ;;
+        -t|--transfer)
+            transfer=true
+            shift
+            ;;
+        -d|--delete)
+            delete=true
+            shift
+            ;;
+        -D|--delete-all)
+            delete=true
+            delete_sources=true
+            shift
+            ;;
+        -h|--help)
+            if [ $getopt_version = "enhanced" ]; then
+                PrintHelp
+            elif [ $getopt_version = "compatible" ]; then
+                PrintHelpCompatible
+            else
+                PrintError "unrecognized getopt version string($getopt_version)!"
+                exit 1
+            fi
+            exit 0
+            ;;
+        --)
+            shift
+            if [ $# -eq 0 ]; then
+                PrintError "no input files specified!"
+                exit 1
+            fi
+            break
+            ;;
+        *)
+            PrintError "unrecognized option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+# change to execdir before performing any operations
+if [ ! -d "${execdir}" ]; then
+    PrintError "directory '${execdir}' does not exist!"
+    exit 1
+fi
+pushd "${execdir}" &> /dev/null
+
+# checkout if input files exist
+for file in "$@"; do
+    if [ ! -e "$file" ]; then
+        PrintError "input file '$file' does not exist in directory '${execdir}'!"
+        exit 1
+    elif [ ! -r "$file" ]; then
+        PrintError "input file '$file' is not readable!"
+        exit 1
+    fi
+done
+
+# set options to exit on error, undefined variable, and pipe failure
+set -euo pipefail
+
+# start to archive files and generate information file
+PrintInfo "Start to archive files..."
+tar -czf "${archive_file}" "$@"
+md5sum "${archive_file}" \
+    | awk -v declare="${declare_msg}" '{ print $2, "MD5", $1, declare }' \
+    | iconv -t GBK > "${info_file}"
+PrintInfo "Input files archived to $(realpath "${archive_file}")"
+PrintInfo "Information file generated to $(realpath "${info_file}")"
+
+# transfer files to RDN via SFTP if transfer option is set
+if [ "$transfer" == true ]; then
+    PrintInfo "Start to transfer files to RDN..."
+    sftp -b - "hygon\\${sftp_user}@${sftp_host}" <<< "${sftp_batch}"
+    PrintInfo "Files transferred to RDN successfully."
+fi
+
+# delete source and archive files if delete option is set
+if [ "$delete" == true ]; then
+    if [ "$transfer" == true ]; then
+        PrintInfo "Start to delete files..."
+        if [ "$delete_sources" == true ]; then
+            rm -rf "$@" "${archive_file}" "${info_file}"
+            PrintInfo "Source and archive files deleted successfully."
+        else
+            rm -rf "${archive_file}" "${info_file}"
+            PrintInfo "Archive file and information file deleted successfully."
+        fi
+    else
+        PrintWarning "Transfer option is not set, archive file will not be deleted."
+    fi
+fi
+
+# change to previous directory
+popd &> /dev/null
+
+# print character picture message
+echo -ne "${font_cyan}"
+echo " _________________           "
+echo "<    Enjoy it!    >          "
+echo " -----------------           "
+echo "        \   ^__^             "
+echo "         \  (oo)\_______     "
+echo "            (__)\       )\/\ "
+echo "                ||----w |    "
+echo "                ||     ||    "
+echo -e "${font_reset}"

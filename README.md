@@ -81,6 +81,20 @@ for convenience, clarity, and efficiency.
   - **vim-polyglot:** Language pack for Vim.
   - **xterm-color-table.vim:** Color table utility.
 
+### 🔌 Nicetools Package Management
+
+- **Integrated Nicetools:**  
+  - Provides predefined scripts and functions for common tasks.
+  - Supports automatic PATH configuration for installed tools using `POWERBASH_ADD_BIN_PATH=1`.
+
+### 🌐 SSH Tunnel Systemd Service
+
+- **Automatic SSH Tunnel Setup:**  
+  - Configures SSH tunnel systemd service for automatic tunnel creation.
+  - Supports jump server connection with direct user@ip or SSH profile.
+  - Validates connectivity before configuring the service.
+  - Provides interactive prompts for configuration during installation.
+  - Review `$INSTALL_PATH/.nicetools/doc/ssh_tunnel/README.md` for more details.
 
 ## Installation
 
@@ -96,17 +110,29 @@ for convenience, clarity, and efficiency.
     ```
     By default, this installs to your `$HOME` directory. See `./PowerBash -h` for more information.
 
-3. **Start the new bash environment or re-source your .bashrc to make configuration changes take effect in your shell:**
+3. **Optional: Install with SSH Tunnel Service:**
+    ```bash
+    ./PowerBash -i --enable-ssh-tunnel-service
+    ```
+    This will prompt for SSH tunnel configuration during installation.
+
+4. **Optional: Configure Nicetools PATH:**
+    ```bash
+    POWERBASH_ADD_BIN_PATH=1 ./PowerBash -i
+    ```
+    This will add nicetools bin directories to your PATH environment variable.
+
+5. **Start the new bash environment or re-source your .bashrc to make configuration changes take effect in your shell:**
     ```bash
     source ~/.bashrc
     ```
 
-4. **Start a new tmux session to enjoy tmux with the enhanced configuration:**
+6. **Start a new tmux session to enjoy tmux with the enhanced configuration:**
     ```bash
     tmux
     ```
 
-5. **Open Vim to enjoy the enhanced environment:**
+7. **Open Vim to enjoy the enhanced environment:**
     ```bash
     vim
     ```

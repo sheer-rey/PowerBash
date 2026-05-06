@@ -1,0 +1,232 @@
+#!/bin/bash
+####################################################################################################
+# @file    CreateSSHTunnel
+# @brief   Create SSH tunnel to remote server with optional jump host.
+#
+# @author  sheer.rey<sheer.rey@gmail.cn>
+# @date    06/26/2025
+# @version 1.0
+####################################################################################################
+script_root="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+# load predefined variables and functions
+if [ -f "${script_root}/../predefined" ]; then
+    source "${script_root}/../predefined"
+else
+    echo "Error: predefined file not found in ${script_root}!" 1>&2
+    exit 1
+fi
+
+# Check if ssh client is installed
+if ! command -v ssh >/dev/null 2>&1; then
+    PrintError "OpenSSH client (ssh) is not installed."
+    exit 1
+fi
+
+# Default parameters
+jump_profile=""
+jump_user=""
+jump_host=""
+ssh_pid=""
+port_file=""
+verbose=0
+
+# predefined options
+sopt='vP:U:H:h'
+lopt='verbose,jump-profile:,jump-user:,jump-host:,help'
+
+# predefined functions
+function PrintHelp {
+    cat <<!
+Usage: $(basename "${BASH_SOURCE[0]}") <remote_ip:port> [options]
+
+Options:
+  -v, --verbose                 Enable verbose output of ssh command
+  -P, --jump-profile <PROFILE>  Use SSH configuration profile predefined in ~/.ssh/config
+  -U, --jump-user <USER>        Specify jump user
+  -H, --jump-host <HOST>        Specify jump host
+
+  -h, --help                    Print this help message and exit
+!
+}
+
+function PrintHelpCompatible {
+    cat <<!
+Usage: $(basename "${BASH_SOURCE[0]}") <remote_ip:port> [options]
+
+Options:
+  -v            Enable verbose output of ssh command
+  -P <PROFILE>  Use SSH configuration profile predefined in ~/.ssh/config
+  -U <USER>     Specify jump user
+  -H <HOST>     Specify jump host
+
+  -h            Print this help message and exit
+!
+}
+
+# Sequential port scan
+function FindFreePort {
+    local lower=8080
+    local upper=10921
+
+    for (( port = lower; port <= upper; ++port )); do
+        if ! lsof -iTCP:"$port" -sTCP:LISTEN &>/dev/null; then
+            echo "$port"
+            return 0
+        fi
+    done
+
+    PrintError "No free port found for creating ssh tunnel"
+    false
+}
+
+# Generate unique port file path
+function GeneratePortFile {
+    local key
+    local hash
+    key="${remote_ip_and_port}_${jump_host}_${jump_user}_${jump_profile}"
+    hash=$(echo -n "$key" | md5sum | awk '{print $1}')
+    echo "/tmp/ssh_tunnel_${hash}.port"
+    return 0
+}
+
+# Trap handler for cleanup on exit
+function Cleanup {
+    if [ -n "$ssh_pid" ] && kill -0 "$ssh_pid" &>/dev/null; then
+        PrintInfo "Killing SSH tunnel (PID $ssh_pid)..."
+        kill "$ssh_pid"
+    fi
+
+    if [ -n "$port_file" ] && [ -f "$port_file" ]; then
+        rm -f "$port_file"
+        PrintInfo "Removed port file: $port_file"
+    fi
+}
+
+# register trap handler
+trap Cleanup EXIT INT TERM
+
+# main body
+
+## Parse arguments with getopt
+if ! ParseArguments "$(basename "${BASH_SOURCE[0]}")" $sopt $lopt "$@"; then exit 1; fi
+PrintInfo "Parsed arguments: $parsed_args"
+eval set -- "$parsed_args"
+
+## iterate options
+while true; do
+    case "$1" in
+        -v|--verbose)
+            verbose=1
+            shift
+            ;;
+        -P|--jump-profile)
+            jump_profile="$2"
+            shift 2
+            ;;
+        -U|--jump-user)
+            jump_user="$2"
+            shift 2
+            ;;
+        -H|--jump-host)
+            jump_host="$2"
+            shift 2
+            ;;
+        -h|--help)
+            if [ $getopt_version = "enhanced" ]; then
+                PrintHelp
+            elif [ $getopt_version = "compatible" ]; then
+                PrintHelpCompatible
+            else
+                PrintError "unrecognized getopt version string($getopt_version)!"
+                exit 1
+            fi
+            exit 0
+        ;;
+        --)
+            shift
+            if [ $# -eq 0 ]; then
+                PrintError "no remote IP:port specified!"
+                exit 1
+            elif [ $# -gt 1 ]; then
+                PrintError "too many arguments, only remote IP:port expected!"
+                exit 1
+            elif [[ "$1" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]+$ ]]; then
+                remote_ip_and_port="$1"
+            else
+                PrintError "invalid remote IP:port format!"
+                exit 1
+            fi
+            break
+            ;;
+        *)
+            PrintError "unrecognized option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+## Validate
+if [ -z "$jump_profile" ] && [ -z "$jump_host" ] && [ -z "$jump_user" ]; then
+    PrintError "either jump-profile or jump-host/jump-user must be specified for jump server connection"
+    exit 1
+fi
+
+if [ -n "$jump_profile" ] && { [ -n "$jump_host" ] || [ -n "$jump_user" ]; }; then
+    PrintError "jump-profile conflicts with jump-host/jump-user"
+    exit 1
+fi
+
+if { [ -n "$jump_host" ] && [ -z "$jump_user" ]; } \
+    || { [ -z "$jump_host" ] && [ -n "$jump_user" ]; }; then
+    PrintError "jump-host and jump-user must be specified together"
+    exit 1
+fi
+
+# Enable error tracing
+enable_error_tracing
+
+# Port selection
+local_port=$(FindFreePort)
+PrintInfo "Selected local port $local_port"
+
+# Generate port file
+port_file=$(GeneratePortFile)
+PrintInfo "Generated port file with path $port_file"
+
+# Build SSH command
+ssh_cmd="ssh -NL ${local_port}:${remote_ip_and_port}"
+[ -n "$jump_profile" ] && ssh_cmd+=" $jump_profile"
+[ -n "$jump_host" ] && ssh_cmd+=" ${jump_user}@${jump_host}"
+[ $verbose -eq 1 ] && ssh_cmd+=" -v"
+
+# Create SSH tunnel
+PrintInfo "Create ssh tunnel in background with command '$ssh_cmd'"
+eval "$ssh_cmd" &
+ssh_pid=$!
+
+# Check if SSH started successfully
+if ! kill -0 "$ssh_pid" &>/dev/null; then
+    PrintError "Failed to start SSH tunnel"
+    exit 1
+fi
+
+# Write metadata to file
+cat > "$port_file" <<EOF
+local_port=${local_port}
+remote=${remote_ip_and_port}
+ssh_pid=${ssh_pid}
+EOF
+
+# Output
+PrintInfo "SSH tunnel established:"
+PrintInfo "  Local port: $local_port -> ${remote_ip_and_port}"
+PrintInfo "  SSH PID: $ssh_pid"
+PrintInfo "  Port file: $port_file"
+
+# Disable error tracing
+disable_error_tracing
+
+# Wait for SSH process
+wait "$ssh_pid" &>/dev/null
+PrintInfo "SSH tunnel exited with code: $?"

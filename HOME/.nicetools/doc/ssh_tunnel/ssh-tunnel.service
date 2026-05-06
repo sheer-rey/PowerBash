@@ -1,0 +1,28 @@
+[Unit]
+Description=SSH Tunnel to Server via Jump Host
+After=network.target sshd.service
+Wants=network-online.target
+ConditionPathExists={{NICETOOLS_BIN_PATH}}/CreateSSHTunnel
+ConditionPathExists={{NICETOOLS_BIN_PATH}}/predefined
+
+[Service]
+Type=simple
+User={{USERNAME}}
+Group={{USERNAME}}
+Environment="SC_LOG_LEVEL=debug"
+ExecStart=/bin/bash {{NICETOOLS_BIN_PATH}}/CreateSSHTunnel {{HOST}}:{{PORT}} {{SCRIPT_PARAMS}} --verbose
+Restart=always
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+SuccessExitStatus=255
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=false
+ReadWritePaths=/tmp
+
+[Install]
+WantedBy=multi-user.target

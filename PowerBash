@@ -12,7 +12,12 @@
 powerbash_root="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
 # load predefined variables and functions
-source "${powerbash_root}/predefined"
+if [ -f "${powerbash_root}/HOME/.nicetools/predefined" ]; then
+    source "${powerbash_root}/HOME/.nicetools/predefined"
+else
+    echo "Error: predefined file not found!" 1>&2
+    exit 1
+fi
 
 # current time for backup suffix
 current_time=$(date +"%Y%m%d%H%M%S")
@@ -27,6 +32,9 @@ install_path=
 uninstall_path=
 install_archive=
 install_force=0
+enable_ssh_tunnel_service=0
+ssh_tunnel_service_file="ssh-tunnel.service"
+ssh_tunnel_script_file="CreateSSHTunnel"
 backup_dir=".PowerBashBackup"
 backup_prefix="powerbash-"
 backup_suffix=".tar.gz"
@@ -44,6 +52,7 @@ files=(
 dirs=(
     ".vim"
     ".config/clangd"
+    ".nicetools"
 )
 dependencies=(
     "vim"          # configuration required
@@ -63,12 +72,12 @@ dependencies=(
 
 # predefined options for PowerBash
 sopt="hfi::u::a:"
-lopt="help,force,install::,uninstall::,archive:"
+lopt="help,force,install::,uninstall::,archive:,enable-ssh-tunnel-service"
 
 # predefined functions for PowerBash
 function PrintHelp {
     cat <<!
-Usage: $(basename ${BASH_SOURCE[0]}) [option] ...
+Usage: $(basename "${BASH_SOURCE[0]}") [option] ...
 Used for PowerBash package management(install, uninstall, etc.).
 
 Options:
@@ -84,6 +93,11 @@ Options:
   -a, --archive <file>      Only valid with -i/--install option. Used to install
                             PowerBash package with the specified archived backup
                             <file> instead of original one.
+      --enable-ssh-tunnel-service
+                            Only valid with -i/--install option. Enable SSH tunnel
+                            systemd service installation. If this option has been
+                            specified, it will prompt for necessary information for
+                            ssh tunnel service configuration.
   -f, --force               Only valid with -i/--install option. Used to overwrite
                             existing PowerBash package files instead of archive.
 
@@ -93,7 +107,7 @@ Options:
 
 function PrintHelpCompatible {
     cat <<!
-Usage: $(basename ${BASH_SOURCE[0]}) [option] ...
+Usage: $(basename "${BASH_SOURCE[0]}") [option] ...
 Used for PowerBash package management(install, uninstall, etc.).
 
 Options:
@@ -111,6 +125,121 @@ Options:
 
   -h            Print this help message and exit.
 !
+}
+
+function ConfigureGit {
+    local git_cfg_file="$install_path/.gitconfig"
+
+    # Only configure git user information when .gitconfig file exist, otherwise skip it directly
+    if [ -f "$git_cfg_file" ]; then
+        PrintInfo "${font_magenta}Configuring git user information ...${font_reset}"
+        read -rp "Please enter your git user name: " git_user_name
+        read -rp "Please enter your git user email: " git_user_email
+
+        if [ -n "$git_user_name" ] && [ -n "$git_user_email" ]; then
+            git config --file "$git_cfg_file" user.name "$git_user_name"
+            git config --file "$git_cfg_file" user.email "$git_user_email"
+            PrintInfo "${font_green}Git user information configured successfully!${font_reset}"
+        else
+            PrintWarning "Git user information not configured!"
+        fi
+    fi
+}
+
+function ConfigureSSHTunnelService {
+    # Check the existence of ssh tunnel service file and script file in installation path
+    local service_file
+    service_file=$(find "$install_path" -type f -name "$ssh_tunnel_service_file" 2>/dev/null | head -n 1)
+    if [ -z "$service_file" ]; then
+        PrintWarning "SSH tunnel service file '$ssh_tunnel_service_file' not found in installation \
+                      path, skipping SSH tunnel service configuration!"
+        return 0
+    fi
+
+    local script_file
+    script_file=$(find "$install_path" -type f -name "$ssh_tunnel_script_file" 2>/dev/null | head -n 1)
+    if [ -z "$script_file" ]; then
+        PrintWarning "SSH tunnel script file '$ssh_tunnel_script_file' not found in installation path, skipping SSH tunnel service configuration!"
+        return 0
+    fi
+
+    PrintInfo "${font_magenta}Configuring SSH tunnel service ...${font_reset}"
+
+    # Get the actual username
+    local actual_username
+    actual_username=$(whoami)
+    if [ "$actual_username" == "root" ]; then
+        actual_username=$(logname 2>/dev/null || echo "root")
+    fi
+
+    # Prompt for host:port
+    local ssh_tunnel_host_port
+    read -rp "Please enter the target server and port (e.g., 10.65.46.222:8001): " ssh_tunnel_host_port
+
+    # Validate host:port format
+    if [ -z "$ssh_tunnel_host_port" ]; then
+        PrintWarning "SSH tunnel host:port not provided, skipping SSH tunnel service configuration!"
+        return 0
+    elif ! [[ "$ssh_tunnel_host_port" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]+$ ]]; then
+        PrintWarning "Invalid host:port format '$ssh_tunnel_host_port', skipping SSH tunnel service configuration!"
+        PrintWarning "Please use format: IP:PORT (e.g., 10.65.46.222:8001)"
+        return 0
+    fi
+
+    # Prompt for user@ip or ssh profile
+    local ssh_tunnel_jump_server
+    read -rp "Please enter the user@ip or SSH profile name (e.g., user@10.65.10.11 or My-Jump-Demo): " ssh_tunnel_jump_server
+
+    # Validate ssh tunnel jump server input
+    if [ -z "$ssh_tunnel_jump_server" ]; then
+        PrintWarning "SSH tunnel jump server not provided, skipping SSH tunnel service configuration!"
+        return 0
+    fi
+
+    # Determine if input is user@ip or ssh profile
+    local is_user_ip=0
+    local is_ssh_profile=0
+    if [[ "$ssh_tunnel_jump_server" =~ ^[^@]+@([0-9]{1,3}\.){3}[0-9]{1,3}(:[0-9]+)?$ ]]; then
+        # Validate connectivity to user@ip
+        if ! ssh -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$ssh_tunnel_jump_server" true &>/dev/null; then
+            PrintWarning "Cannot connect to user@ip '$ssh_tunnel_jump_server', skipping SSH tunnel service configuration!"
+            PrintWarning "Please verify the host is reachable!"
+            return 0
+        fi
+        is_user_ip=1
+    else
+        # Validate existance and connectivity of SSH profile
+        if [ ! -f "$HOME/.ssh/config" ]; then
+            PrintWarning "SSH config file not found at '$HOME/.ssh/config', skipping SSH tunnel service configuration!"
+            return 0
+        elif ! grep -q "^Host \+${ssh_tunnel_jump_server}" "$HOME/.ssh/config"; then
+            PrintWarning "SSH profile '$ssh_tunnel_jump_server' not found in '$HOME/.ssh/config', skipping SSH tunnel service configuration!"
+            return 0
+        elif ! ssh -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$ssh_tunnel_jump_server" true &>/dev/null; then
+            PrintWarning "Cannot connect to SSH profile '$ssh_tunnel_jump_server', skipping SSH tunnel service configuration!"
+            PrintWarning "Please verify the SSH profile is correct!"
+            return 0
+        fi
+        is_ssh_profile=1
+    fi
+
+    # Replace placeholders in the service file
+    local nicetools_bin_path
+    nicetools_bin_path=$(dirname "$script_file")
+    sed -i "s|{{NICETOOLS_BIN_PATH}}|$nicetools_bin_path|g" "$service_file"
+    sed -i "s|{{USERNAME}}|$actual_username|g" "$service_file"
+    sed -i "s|{{HOST}}:{{PORT}}|$ssh_tunnel_host_port|g" "$service_file"
+
+    # Build script params based on input type
+    if [ $is_user_ip -eq 1 ]; then
+        sed -i "s|{{SCRIPT_PARAMS}}|$ssh_tunnel_jump_server|g" "$service_file"
+        PrintDebug "${font_green}SSH tunnel service file configured with host:port=$ssh_tunnel_host_port and jump-server=$ssh_tunnel_jump_server!${font_reset}"
+    elif [ $is_ssh_profile -eq 1 ]; then
+        sed -i "s|{{SCRIPT_PARAMS}}|-P $ssh_tunnel_jump_server|g" "$service_file"
+        PrintDebug "${font_green}SSH tunnel service file configured with host:port=$ssh_tunnel_host_port and jump-server=$ssh_tunnel_jump_server!${font_reset}"
+    fi
+
+    PrintInfo "${font_green}SSH tunnel service file configured successfully!${font_reset}"
 }
 
 function DoInstall {
@@ -137,7 +266,8 @@ function DoInstall {
         fi
 
         PrintInfo "${font_magenta}Looking for existing configurations ...${font_reset}"
-        local temp_dir=$(mktemp -d)
+        local temp_dir
+        temp_dir=$(mktemp -d)
         for file in "${files[@]}"; do
             if [ -f "$install_path/$file" ]; then
                 PrintInfo "${font_yellow}Found file $install_path/$file${font_reset}"
@@ -153,18 +283,18 @@ function DoInstall {
             fi
         done
 
-        if [ -z "$(ls -A $temp_dir)" ]; then
+        if [ -z "$(ls -A "$temp_dir")" ]; then
             PrintInfo "${font_yellow}No existing configurations found${font_reset}"
         else
             PrintInfo "${font_magenta}%s%s${font_reset}" \
                       "Backing up existing configurations to " \
                       "$install_path/$backup_dir/$backup_file ..."
-            tar -czf "$install_path/$backup_dir/$backup_file" -C $temp_dir $(ls -A $temp_dir)
+            tar -czf "$install_path/$backup_dir/$backup_file" -C "$temp_dir" "$(ls -A "$temp_dir")"
         fi
-        rm -rf $temp_dir
+        rm -rf "$temp_dir"
     fi
 
-    # install PowerBash from $install_archive
+    # extract PowerBash from $install_archive
     if [ -n "$install_archive" ]; then
         PrintInfo "${font_magenta}Checking authority for archive file ...${font_reset}"
         if ! [ -e "$install_archive" ]; then
@@ -178,12 +308,13 @@ function DoInstall {
 
         PrintInfo "${font_magenta}Checking validity for archive file ...${font_reset}"
         if ! [[ "$(basename "$install_archive")" =~ $backup_pattern ]] || \
-           ! tar -tzf "$install_archive" >&/dev/null; then
+           ! tar -tzf "$install_archive" &>/dev/null; then
             PrintError "specified archive file $install_archive is not valid, install canceled!"
             exit 2
         fi
-        local temp_dir=$(mktemp -d)
-        tar -xzf "$install_archive" -C $temp_dir >&/dev/null
+        local temp_dir
+        temp_dir=$(mktemp -d)
+        tar -xzf "$install_archive" -C "$temp_dir" &>/dev/null
         for file in "${files[@]}"; do
             if [ -f "$temp_dir/$file" ]; then
                 PrintDebug "found file $file in specified archive file $install_archive!"
@@ -202,7 +333,7 @@ function DoInstall {
 
     # check dependent tools' existance
     for dep in "${dependencies[@]}"; do
-        if ! which $dep >&/dev/null; then
+        if ! which "$dep" &>/dev/null; then
             PrintWarning "%b%s" \
                          "missing ${font_yellow}$dep${font_reset} tool, " \
                          "there may be compatibility issues."
@@ -211,7 +342,7 @@ function DoInstall {
 
     # install PowerBash configurations
     PrintInfo "${font_magenta}Start to install PowerBash ...${font_reset}"
-    local powerbash_src_dir=
+    local powerbash_src_dir
     if [ -n "$install_archive" ]; then
         powerbash_src_dir="$temp_dir"
     else
@@ -228,42 +359,56 @@ function DoInstall {
     for dir in "${dirs[@]}"; do
         if [ -e "$powerbash_src_dir/$dir" ]; then
             PrintDebug "Installing directory $dir into $install_path ..."
-            rm -rf "$install_path/$dir"
+            rm -rf "${install_path:?}/${dir:?}"
             mkdir -p "$(dirname "$install_path/$dir")"
             cp -rf "$powerbash_src_dir/$dir" "$install_path/$dir"
         fi
     done
 
-    # Specialized for .gitconfig file, ask for setting user name and email and inject
-    git_cfg_file="$install_path/.gitconfig"
-    if [ -f "$git_cfg_file" ]; then
-        PrintInfo "${font_magenta}Configuring git user information ...${font_reset}"
-        read -p "Please enter your git user name: " git_user_name
-        read -p "Please enter your git user email: " git_user_email
-        if [ -n "$git_user_name" ] && [ -n "$git_user_email" ]; then
-            git config --file "$git_cfg_file" user.name "$git_user_name"
-            git config --file "$git_cfg_file" user.email "$git_user_email"
-            PrintInfo "${font_green}Git user information configured successfully!${font_reset}"
-        else
-            PrintWarning "Git user information not configured!"
+    # find all bin directories in installed 'dirs', set execute permission for all files within bin
+    # directories, and add each bin directory to PATH environment variable in .powerbashrc
+    for dir in "${dirs[@]}"; do
+        local bin_dir
+        bin_dir=$(find "$install_path/$dir" -type d -name "bin" \
+                        ! -path "$install_path/.vim/*" \
+                        ! -path "$install_path/.config/*" \
+                        2>/dev/null)
+        if [ -n "$bin_dir" ]; then
+            for bin_path in $bin_dir; do
+                chmod -R +x "$bin_path"
+                if [[ -n "${POWERBASH_ADD_BIN_PATH:-}" && "$POWERBASH_ADD_BIN_PATH" == "1" ]]; then
+                    PrintDebug "Adding $bin_path to PATH environment variable in .powerbashrc ..."
+                    echo "export PATH=\"\$PATH:$bin_path\"" >> "$install_path/.powerbashrc"
+                fi
+            done
         fi
+    done
+
+    # Specialized git configurations for .gitconfig file
+    ConfigureGit
+
+    # Specialized for ssh_tunnel service
+    if [ $enable_ssh_tunnel_service -eq 1 ]; then
+        ConfigureSSHTunnelService
     fi
 
     # check and append 'source .powerbashrc' statement
     PrintDebug "Ejecting powerbash runtime configuration ..."
-    sed -i "/$source_comment_begin/,/$source_comment_end/d" $bashrc_file
-    if [ -n "$(tail -n 1 $bashrc_file)" ]; then echo "" >> $bashrc_file; fi
-    echo "$source_comment_begin" >> $bashrc_file
-    echo "source $install_path/.powerbashrc" >> $bashrc_file
-    echo "$source_comment_end" >> $bashrc_file
+    sed -i "/$source_comment_begin/,/$source_comment_end/d" "$bashrc_file"
+    if [ -n "$(tail -n 1 "$bashrc_file")" ]; then echo "" >> "$bashrc_file"; fi
+    {
+        echo "$source_comment_begin"
+        echo "source $install_path/.powerbashrc"
+        echo "$source_comment_end"
+    } >> "$bashrc_file"
 
     # remove temp files while install PowerBash from $install_archive
-    if [ -n "$install_archive" ]; then rm -rf $temp_dir; fi
+    if [ -n "$install_archive" ]; then rm -rf "$temp_dir"; fi
 
     # Generate vim help documents for new installed plugins
     PrintDebug "Generating help documents for vim plugins ..."
     if vim -h &> /dev/null; then
-        vim -c 'Helptags' -c 'q'
+        vim -c 'Helptags' -c 'q' &> /dev/null
     fi
 
     # print character picture message
@@ -294,15 +439,15 @@ function DoUninstall {
     for file in "${files[@]}"; do
         if [ -f "$uninstall_path/$file" ]; then
             PrintInfo "${font_yellow}Found file $uninstall_path/$file${font_reset}"
-            conf_list[$conf_index]="$uninstall_path/$file"
-            let ++conf_index
+            conf_list[conf_index]="$uninstall_path/$file"
+            ((++conf_index))
         fi
     done
     for dir in "${dirs[@]}"; do
         if [ -d "$uninstall_path/$dir" ]; then
             PrintInfo "${font_yellow}Found directory $uninstall_path/$dir${font_reset}"
-            conf_list[$conf_index]="$uninstall_path/$dir"
-            let ++conf_index
+            conf_list[conf_index]="$uninstall_path/$dir"
+            ((++conf_index))
         fi
     done
 
@@ -312,7 +457,7 @@ function DoUninstall {
 
     # check and remove 'source .powerbashrc' statement
     PrintDebug "Removing powerbash runtime configuration ..."
-    sed -i "/$source_comment_begin/,/$source_comment_end/d" $bashrc_file
+    sed -i "/$source_comment_begin/,/$source_comment_end/d" "$bashrc_file"
 
     # print character picture message
     echo -ne "${font_cyan}"
@@ -330,15 +475,15 @@ function DoUninstall {
 # main body
 
 ## check options for PowerBash
-ParseArguments $(basename ${BASH_SOURCE[0]}) $sopt $lopt "$@"
-if [ $? -ne 0 ]; then exit 1; fi
+if ! ParseArguments "$(basename "${BASH_SOURCE[0]}")" $sopt $lopt "$@"; then exit 1; fi
+PrintDebug "Parsed arguments: $parsed_args"
 eval set -- "$parsed_args"
 
 ## iterate options
 while true; do
     case "$1" in
         "-i" | "--install")
-            if [ -n "$2" ] && [ ${2:0:1} == "-" ]; then
+            if [ -n "$2" ] && [ "${2:0:1}" == "-" ]; then
                 install_path=$HOME
                 shift 1
             else
@@ -348,7 +493,7 @@ while true; do
             fi
         ;;
         "-u" | "--uninstall")
-            if [ -n "$2" ] && [ ${2:0:1} == "-" ]; then
+            if [ -n "$2" ] && [ "${2:0:1}" == "-" ]; then
                 uninstall_path=$HOME
                 shift 1
             else
@@ -360,6 +505,10 @@ while true; do
         "-a" | "--archive")
             install_archive=$2
             shift 2
+        ;;
+        "--enable-ssh-tunnel-service")
+            enable_ssh_tunnel_service=1
+            shift 1
         ;;
         "-f" | "--force")
             install_force=1
@@ -400,6 +549,16 @@ if [ -n "$uninstall_path" ]; then
         exit 1
     elif [ $install_force -eq 1 ]; then
         PrintError "the force and uninstall options cannot specified at the same time!"
+        exit 1
+    fi
+fi
+
+if [ $enable_ssh_tunnel_service -eq 1 ]; then
+    if [ -z "$install_path" ]; then
+        PrintError "the --enable-ssh-tunnel-service option can only be specified with -i/--install!"
+        exit 1
+    elif [ -n "$install_archive" ]; then
+        PrintError "the --enable-ssh-tunnel-service and -a/--archive options cannot specified at the same time!"
         exit 1
     fi
 fi

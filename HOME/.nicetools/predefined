@@ -8,6 +8,9 @@
 # @version  0.0.1
 ####################################################################################################
 
+# shellcheck disable=SC2015
+# shellcheck disable=SC2034
+
 # define font formatting sequence
 ## text style (set)
 font_reset="\033[0m"
@@ -70,7 +73,7 @@ if ! tput setaf 1 &>/dev/null || ! [ -t 1 ] || [ "$TERM" == "dumb" ]; then
     # color not supported, clear predefined variables
     for var in $(compgen -v); do
         if [[ "$var" == font_* ]]; then
-            unset "$var"
+            printf -v "$var" '%s' ""
         fi
     done
 fi
@@ -87,6 +90,7 @@ declare -A LOG_LEVELS=( ["quiet"]=0 ["error"]=1 ["warning"]=2 ["info"]=3 ["debug
 ## @param $2 ... - additional arguments to be formatted into the error message
 function PrintError {
     if [[ -n "$SC_LOG_LEVEL" && "${LOG_LEVELS[$SC_LOG_LEVEL]}" -ge "${LOG_LEVELS["error"]}" ]]; then
+        # shellcheck disable=SC2059
         printf "${font_red}Error:${font_reset} $1\n" "${@:2}" >&2
     fi
 }
@@ -96,6 +100,7 @@ function PrintError {
 ## @param $2 ... - additional arguments to be formatted into the warning message
 function PrintWarning {
     if [[ -n "$SC_LOG_LEVEL" && "${LOG_LEVELS[$SC_LOG_LEVEL]}" -ge "${LOG_LEVELS["warning"]}" ]]; then
+        # shellcheck disable=SC2059
         printf "${font_red}Warning:${font_reset} $1\n" "${@:2}" >&1
     fi
 }
@@ -105,6 +110,7 @@ function PrintWarning {
 ## @param $2 ... - additional arguments to be formatted into the info message
 function PrintInfo {
     if [[ -n "$SC_LOG_LEVEL" && "${LOG_LEVELS[$SC_LOG_LEVEL]}" -ge "${LOG_LEVELS["info"]}" ]]; then
+        # shellcheck disable=SC2059
         printf "${font_yellow}Info:${font_reset} $1\n" "${@:2}" >&1
     fi
 }
@@ -114,6 +120,7 @@ function PrintInfo {
 ## @param $2 ... - additional arguments to be formatted into the debug message
 function PrintDebug {
     if [[ -n "$SC_LOG_LEVEL" && "${LOG_LEVELS[$SC_LOG_LEVEL]}" -ge "${LOG_LEVELS["debug"]}" ]]; then
+        # shellcheck disable=SC2059
         printf "${font_blue}Debug:${font_reset} $1\n" "${@:2}" >&1
     fi
 }
@@ -129,6 +136,7 @@ function _error_trap_handler {
     local rc=$?
     local cmd="${BASH_COMMAND}"
     echo "" >&2
+    # shellcheck disable=SC2059
     printf "${font_red}Command '${cmd}' error with exit code ${rc}${font_reset}\n" >&2
     printf "${font_red}Occurred at %s:%s${font_reset}\n" "${BASH_SOURCE[1]:-${BASH_SOURCE[0]}}" "${BASH_LINENO[0]:-?}" >&2
 
@@ -136,6 +144,7 @@ function _error_trap_handler {
     local i
     local depth=${#FUNCNAME[@]}
     echo "" >&2
+    # shellcheck disable=SC2059
     printf "${font_red}Function call stack (most recent call first):${font_reset}\n" >&2
     for ((i = 0; i < depth; i++)); do
         local func="${FUNCNAME[$i]}"
@@ -204,9 +213,12 @@ function disable_error_tracing {
 ##
 ## @return recommended concurrency build jobs number
 function GetConcurrencyBuildJobs {
-    local cpu_cores=$(nproc)
-    local mem_gib=$(free -g | awk '/^Mem/{ print $2 }')
-    local recommended_jobs=$(( cpu_cores < mem_gib ? cpu_cores : mem_gib ))
+    local cpu_cores
+    local mem_gib
+    local recommended_jobs
+    cpu_cores=$(nproc)
+    mem_gib=$(free -g | awk '/^Mem/{ print $2 }')
+    recommended_jobs=$(( cpu_cores < mem_gib ? cpu_cores : mem_gib ))
     echo $recommended_jobs
 }
 
@@ -260,7 +272,7 @@ function ParseArguments {
 
     # parse arguments
     if [ $getopt_version = "enhanced" ]; then
-        parsed_args=$(getopt $name $sopt $lopt -- "$@" 2>&1)
+        parsed_args=$(getopt "$name" "$sopt" "$lopt" -- "$@" 2>&1)
         ret=$?
     elif [ $getopt_version = "compatible" ]; then
         if [ -z "$sopt" ]; then
@@ -270,7 +282,7 @@ function ParseArguments {
             parsed_args=""
             return 2
         fi
-        parsed_args=$(getopt ${sopt:2} "$@" 2>&1)
+        parsed_args=$(getopt "${sopt:2}" "$@" 2>&1)
         ret=$?
     else
         PrintError "%s%s" \
@@ -283,7 +295,7 @@ function ParseArguments {
     if [ $ret -ne 0 ]; then
         # extract first error line, in order to handle multi-line output when error occurs
         # in parsing argument via getopt tool
-        PrintError "$(echo "$parsed_args" | head -n 1 | sed s/getopt/${name:2}/g)"
+        PrintError "$(echo "$parsed_args" | head -n 1 | sed s/getopt/"${name:2}"/g)"
         parsed_args=$(echo "$parsed_args" | tail -n 1)
         return 4
     fi
