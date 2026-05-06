@@ -60,7 +60,6 @@ set shiftwidth=4                " set indent size to 4 spaces
 set showmatch                   " turn on matching brackets jumping
 set wildmenu                    " turn on vim enhanced built-in command-line completion
 set noswapfile                  " turn off the swap file
-set shortmess+=c                " don't show 'ins-completion-menu' messages
 set nofoldenable                " not fold any text while file was opened
 set ignorecase                  " set case-insensitive in search patterns
 set smartcase                   " turn on case-sensitive while upper case exist in search patterns
@@ -80,6 +79,10 @@ set cscopetag                   " set ctrl+] command use cscope database additio
 set cscopetagorder=1            " set ctrl+] command use ctags prior to cscope database
 set list                        " enable list mode
 set updatetime=500              " set vim update time to 500ms
+"" don't show 'ins-completion-menu' messages
+if v:version >= 800
+    set shortmess+=c
+endif
 "" set signcolumn draw mode to auto
 if has('patch-7.4.2201')
     set signcolumn=auto
