@@ -164,8 +164,8 @@ function ConfigureSSHTunnelService {
     service_file=$(find "$install_path" -type f -name "$ssh_tunnel_service_file" 2>/dev/null \
                    | head -n 1)
     if [ -z "$service_file" ]; then
-        PrintWarning "SSH tunnel service file '$ssh_tunnel_service_file' not found in " \
-                     "installation path, skipping SSH tunnel service configuration!"
+        PrintWarning "SSH tunnel service file '$ssh_tunnel_service_file' not found in \
+                      installation path, skipping SSH tunnel service configuration!"
         return 0
     fi
 
@@ -173,8 +173,8 @@ function ConfigureSSHTunnelService {
     script_file=$(find "$install_path" -type f -name "$ssh_tunnel_script_file" 2>/dev/null \
                   | head -n 1)
     if [ -z "$script_file" ]; then
-        PrintWarning "SSH tunnel script file '$ssh_tunnel_script_file' not found in " \
-                     "installation path, skipping SSH tunnel service configuration!"
+        PrintWarning "SSH tunnel script file '$ssh_tunnel_script_file' not found in \
+                      installation path, skipping SSH tunnel service configuration!"
         return 0
     fi
 
@@ -211,8 +211,8 @@ function ConfigureSSHTunnelService {
 
     # Validate ssh tunnel jump server input
     if [ -z "$ssh_tunnel_jump_server" ]; then
-        PrintWarning "SSH tunnel jump server not provided, " \
-                     "skipping SSH tunnel service configuration!"
+        PrintWarning "SSH tunnel jump server not provided, \
+                      skipping SSH tunnel service configuration!"
         return 0
     fi
 
@@ -232,17 +232,17 @@ function ConfigureSSHTunnelService {
     else
         # Validate existance and connectivity of SSH profile
         if [ ! -f "$HOME/.ssh/config" ]; then
-            PrintWarning "SSH config file not found at '$HOME/.ssh/config', " \
-                         "skipping SSH tunnel service configuration!"
+            PrintWarning "SSH config file not found at '$HOME/.ssh/config', \
+                          skipping SSH tunnel service configuration!"
             return 0
         elif ! grep -q "^Host \+${ssh_tunnel_jump_server}" "$HOME/.ssh/config"; then
-            PrintWarning "SSH profile '$ssh_tunnel_jump_server' not found in " \
-                         "'$HOME/.ssh/config', skipping SSH tunnel service configuration!"
+            PrintWarning "SSH profile '$ssh_tunnel_jump_server' not found in \
+                          '$HOME/.ssh/config', skipping SSH tunnel service configuration!"
             return 0
         elif ! ssh -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=no \
                    -o UserKnownHostsFile=/dev/null "$ssh_tunnel_jump_server" true &>/dev/null; then
-            PrintWarning "Cannot connect to SSH profile '$ssh_tunnel_jump_server', " \
-                         "skipping SSH tunnel service configuration!"
+            PrintWarning "Cannot connect to SSH profile '$ssh_tunnel_jump_server', \
+                          skipping SSH tunnel service configuration!"
             PrintWarning "Please verify the SSH profile is correct!"
             return 0
         fi
@@ -259,14 +259,14 @@ function ConfigureSSHTunnelService {
     # Build script params based on input type
     if [ $is_user_ip -eq 1 ]; then
         sed -i "s|{{SCRIPT_PARAMS}}|$ssh_tunnel_jump_server|g" "$service_file"
-        PrintDebug "${font_green}SSH tunnel service file configured with " \
-                   "host:port=$ssh_tunnel_host_port and " \
-                   "jump-server=$ssh_tunnel_jump_server!${font_reset}"
+        PrintDebug "${font_green}%s%s${font_reset}" \
+                   "SSH tunnel service file configured with host:port=$ssh_tunnel_host_port and " \
+                   "jump-server=$ssh_tunnel_jump_server!"
     elif [ $is_ssh_profile -eq 1 ]; then
         sed -i "s|{{SCRIPT_PARAMS}}|-P $ssh_tunnel_jump_server|g" "$service_file"
-        PrintDebug "${font_green}SSH tunnel service file configured with " \
-                   "host:port=$ssh_tunnel_host_port and " \
-                   "jump-server=$ssh_tunnel_jump_server!${font_reset}"
+        PrintDebug "${font_green}%s%s${font_reset}" \
+                   "SSH tunnel service file configured with host:port=$ssh_tunnel_host_port and " \
+                   "jump-server=$ssh_tunnel_jump_server!"
     fi
 
     PrintInfo "${font_green}SSH tunnel service file configured successfully!${font_reset}"
@@ -285,12 +285,12 @@ function DoInstall {
         PrintInfo "${font_magenta}Checking authority for backup directory ...${font_reset}"
         if [ -e "$install_path/$backup_dir" ]; then
             if ! [ -d "$install_path/$backup_dir" ]; then
-                PrintError "$install_path/$backup_dir existing but not a directory, " \
-                           "install canceled!"
+                PrintError "$install_path/$backup_dir existing but not a directory, \
+                            install canceled!"
                 exit 2
             elif ! [ -w "$install_path/$backup_dir" ]; then
-                PrintError "$install_path/$backup_dir existing but not writeable, " \
-                           "install canceled!"
+                PrintError "$install_path/$backup_dir existing but not writeable, \
+                            install canceled!"
                 exit 2
             fi
         else
@@ -399,6 +399,7 @@ function DoInstall {
 
     # find all bin directories in installed 'dirs', set execute permission for all files within bin
     # directories, and add each bin directory to PATH environment variable in .powerbashrc
+    local strip_path=0
     for dir in "${dirs[@]}"; do
         local bin_dir
         bin_dir=$(find "$install_path/$dir" -type d -name "bin" \
@@ -409,9 +410,20 @@ function DoInstall {
             for bin_path in $bin_dir; do
                 chmod -R +x "$bin_path"
                 if [[ -n "${POWERBASH_ADD_BIN_PATH:-}" && "$POWERBASH_ADD_BIN_PATH" == "1" ]]; then
-                    PrintInfo "${font_magenta}Adding $bin_path to PATH environment variable " \
-                              "in .powerbashrc ...${font_reset}"
-                    echo "export PATH=\"\$PATH:$bin_path\"" >> "$install_path/.powerbashrc"
+                    if [ $strip_path -eq 0 ]; then
+                        PrintInfo "${font_magenta}%s${font_reset}" \
+                                  "Stripping extra prefix/suffix for PATH environment variable ..."
+                        local strip_expression=
+                        strip_expression="PATH=\"\${PATH:+\$(echo \"\${PATH}\" "
+                        strip_expression+="| sed 's/^:\+//; s/:\+$//;')}\""
+                        echo "export $strip_expression" >> "$install_path/.powerbashrc"
+                        strip_path=1
+                    fi
+                    PrintInfo "${font_magenta}%s${font_reset}" \
+                              "Adding $bin_path to PATH environment variable in .powerbashrc ..."
+                    local append_cmd="grep -q \"$bin_path\" <<< \"\$PATH\" "
+                    append_cmd+="|| export PATH=\"\$PATH:$bin_path\""
+                    echo "$append_cmd" >> "$install_path/.powerbashrc"
                 fi
             done
         fi
