@@ -250,9 +250,9 @@ function ConfigureSSHTunnelService {
     fi
 
     # Replace placeholders in the service file
-    local nicetools_bin_path
-    nicetools_bin_path=$(dirname "$script_file")
-    sed -i "s|{{NICETOOLS_BIN_PATH}}|$nicetools_bin_path|g" "$service_file"
+    local nicetools_path
+    nicetools_path=$(realpath "$(dirname "$script_file")/../")
+    sed -i "s|{{NICETOOLS_PATH}}|$nicetools_path|g" "$service_file"
     sed -i "s|{{USERNAME}}|$actual_username|g" "$service_file"
     sed -i "s|{{HOST}}:{{PORT}}|$ssh_tunnel_host_port|g" "$service_file"
 

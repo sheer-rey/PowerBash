@@ -2,15 +2,15 @@
 Description=SSH Tunnel to Server via Jump Host
 After=network.target sshd.service
 Wants=network-online.target
-ConditionPathExists={{NICETOOLS_BIN_PATH}}/CreateSSHTunnel
-ConditionPathExists={{NICETOOLS_BIN_PATH}}/predefined
+ConditionPathExists={{NICETOOLS_PATH}}/bin/CreateSSHTunnel
+ConditionPathExists={{NICETOOLS_PATH}}/predefined
 
 [Service]
 Type=simple
 User={{USERNAME}}
 Group={{USERNAME}}
 Environment="SC_LOG_LEVEL=debug"
-ExecStart=/bin/bash {{NICETOOLS_BIN_PATH}}/CreateSSHTunnel {{HOST}}:{{PORT}} {{SCRIPT_PARAMS}} --verbose
+ExecStart=/bin/bash {{NICETOOLS_PATH}}/bin/CreateSSHTunnel {{HOST}}:{{PORT}} {{SCRIPT_PARAMS}} --verbose
 Restart=always
 RestartSec=5s
 StandardOutput=journal
