@@ -1,7 +1,7 @@
 [user]
 
 [alias]
-    lg = log --date-order --graph --pretty=format:'%C(yellow)%h%C(reset) - %C(dim white)%an%C(reset)%C(cyan)(%ar)%C(reset) %s %C(green)%d%C(reset)'
+    lg = log --date-order --date=relative --graph --pretty=format:'%C(yellow)%h%C(reset) <%C(cyan)%ad%C(reset), %C(dim white)%<(12,trunc)%an%C(reset)> %C(magenta)|%C(reset) %s %C(green)%d%C(reset)'
     sclone = clone --recurse-submodules
     supdate = submodule update --recursive --init
     sfetch = fetch --recurse-submodules
