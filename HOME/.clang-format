@@ -74,8 +74,9 @@ InsertNewlineAtEOF: true
 LineEnding: LF
 
 # Penalties
-PenaltyBreakAssignment: 200
+PenaltyBreakAssignment: 100
 PenaltyBreakBeforeFirstCallParameter: 100
+PenaltyBreakBeforeMemberAccess: 200
 # PenaltyBreakComment: 300
 # PenaltyBreakFirstLessLess: 120
 PenaltyBreakOpenParenthesis: 100
@@ -85,5 +86,4 @@ PenaltyBreakOpenParenthesis: 100
 # PenaltyExcessCharacter: 1000000
 # PenaltyIndentedWhitespace: 0
 # PenaltyReturnTypeOnItsOwnLine: 200
-
 
