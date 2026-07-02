@@ -10,6 +10,8 @@
 # ✨ perf[scope]: a code change that improves performance
 # 🔎 test[scope]: add missing or correct existing tests
 # 🌈 chore[scope]: changes to build process or aux tools and libs such as doc generation
+# ♻️ ci[scope]: changes to CI/CD configuration files and scripts
+# 🔙 revert[scope]: revert a previous commit
 
 # 1. details...
 # 2. details...
