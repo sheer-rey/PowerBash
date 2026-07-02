@@ -12,7 +12,7 @@ Group={{USERNAME}}
 Environment="SC_LOG_LEVEL=debug"
 ExecStart=/bin/bash {{NICETOOLS_PATH}}/bin/CreateSSHTunnel {{HOST}}:{{PORT}} {{SCRIPT_PARAMS}} --verbose
 Restart=always
-RestartSec=5s
+RestartSec=3s
 StandardOutput=journal
 StandardError=journal
 SuccessExitStatus=255

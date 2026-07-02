@@ -68,9 +68,10 @@ Options:
 function FindFreePort {
     local lower=8080
     local upper=10921
+    local port
 
     for (( port = lower; port <= upper; ++port )); do
-        if ! lsof -iTCP:"$port" -sTCP:LISTEN &>/dev/null; then
+        if ! ss -ltnH "( sport = :$port )" 2>&1 | grep -q . &> /dev/null; then
             echo "$port"
             return 0
         fi
@@ -101,6 +102,9 @@ function Cleanup {
         rm -f "$port_file"
         PrintInfo "Removed port file: $port_file"
     fi
+
+    flock -u "${SSH_TUNNEL_LOCK_FD}" &>/dev/null || true
+    exec {SSH_TUNNEL_LOCK_FD}>&-
 }
 
 # register trap handler
@@ -186,7 +190,17 @@ fi
 # Enable error tracing
 enable_error_tracing
 
-# Port selection
+# Global lock file for ssh tunnel establish
+SSH_TUNNEL_LOCK_FILE="/run/lock/ssh_tunnel.lock"
+
+# Embrace flock to prevent race conditions with concurrent instances
+# Use file descriptor for the lock to keep it alive across the
+# port-scan + ssh-start sequence, so no other instance picks the same port while
+# ssh is still binding.
+exec {SSH_TUNNEL_LOCK_FD}>"$SSH_TUNNEL_LOCK_FILE"
+flock -x "${SSH_TUNNEL_LOCK_FD}"
+
+# Port selection 
 local_port=$(FindFreePort)
 PrintInfo "Selected local port $local_port"
 
@@ -195,7 +209,7 @@ port_file=$(GeneratePortFile)
 PrintInfo "Generated port file with path $port_file"
 
 # Build SSH command
-ssh_cmd="ssh -NL ${local_port}:${remote_ip_and_port}"
+ssh_cmd="ssh -o ExitOnForwardFailure=yes -NL ${local_port}:${remote_ip_and_port}"
 [ -n "$jump_profile" ] && ssh_cmd+=" $jump_profile"
 [ -n "$jump_host" ] && ssh_cmd+=" ${jump_user}@${jump_host}"
 [ $verbose -eq 1 ] && ssh_cmd+=" -v"
@@ -210,6 +224,9 @@ if ! kill -0 "$ssh_pid" &>/dev/null; then
     PrintError "Failed to start SSH tunnel"
     exit 1
 fi
+
+# Unlock the file descriptor to allow other instances to proceed
+flock -u "${SSH_TUNNEL_LOCK_FD}"
 
 # Write metadata to file
 cat > "$port_file" <<EOF
