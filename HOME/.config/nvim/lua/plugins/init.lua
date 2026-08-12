@@ -42,6 +42,6 @@ require("lazy").setup({
     { import = "plugins.aerial" },         -- symbol outline
     { import = "plugins.legacy" },         -- vim plugins kept for compatibility
 }, {
-    checker = { enabled = true },          -- automatically check for plugin updates
+    checker = { enabled = false },         -- disable automatic plugin update checks
     change_detection = { notify = false }, -- do not notify on config file changes
 })
