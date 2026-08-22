@@ -52,10 +52,12 @@ files=(
 dirs=(
     ".vim"
     ".config/clangd"
+    ".config/nvim"
     ".nicetools"
 )
 dependencies=(
     "vim"          # configuration required
+    "nvim"         # configuration required
     "tmux"         # configuration required
     "ack"          # may used by vim plugin 'ack.vim'
     "ag"           # may used by vim plugin 'ack.vim'
