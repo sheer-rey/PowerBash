@@ -18,7 +18,8 @@ IndentCaseLabels: true
 ColumnLimit: 100
 
 # Comments
-ReflowComments: true
+# ReflowComments: true # for clang-format versions equal or below 18
+ReflowComments: Always # for clang-format versions equal or above 20
 SpacesBeforeTrailingComments: 1
 CommentPragmas: '^[/!]<? '
 
@@ -54,6 +55,8 @@ SortUsingDeclarations: Lexicographic
 
 # Function Calls
 AllowAllArgumentsOnNextLine: false
+AllowAllConstructorInitializersOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
 BinPackArguments: false
 
 # Namespaces
@@ -64,7 +67,7 @@ ShortNamespaceLines: 0
 # Line Breaks
 BreakBeforeBinaryOperators: All
 BreakBeforeTernaryOperators: true
-# BreakBinaryOperations: RespectPrecedence
+BreakBinaryOperations: RespectPrecedence # for clang-format versions equal or above 20
 BreakConstructorInitializers: AfterColon
 BreakStringLiterals: true
 
@@ -76,7 +79,7 @@ LineEnding: LF
 # Penalties
 PenaltyBreakAssignment: 100
 PenaltyBreakBeforeFirstCallParameter: 100
-PenaltyBreakBeforeMemberAccess: 200
+PenaltyBreakBeforeMemberAccess: 200 # for clang-format versions equal or above 20
 # PenaltyBreakComment: 300
 # PenaltyBreakFirstLessLess: 120
 PenaltyBreakOpenParenthesis: 100
@@ -86,4 +89,3 @@ PenaltyBreakOpenParenthesis: 100
 # PenaltyExcessCharacter: 1000000
 # PenaltyIndentedWhitespace: 0
 # PenaltyReturnTypeOnItsOwnLine: 200
-
