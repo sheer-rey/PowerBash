@@ -87,6 +87,16 @@ for convenience, clarity, and efficiency.
   - Provides predefined scripts and functions for common tasks.
   - Supports automatic PATH configuration for installed tools using `POWERBASH_ADD_BIN_PATH=1`.
 
+- **Multi-Host Synchronization (SyncToHosts):**  
+  - **Universal Multi-Host Sync Tool:** A powerful script for synchronizing files/directories to multiple remote hosts simultaneously.
+  - **Parallel Sync by Default:** Auto-detects concurrency based on CPU cores and host count (configurable via `-j`/`--jobs`).
+  - **Flexible Host Resolution:** Supports wildcards matching SSH config (`--hosts "Hygon-*"`), direct IPs, `user@host` format, and mixed patterns.
+  - **Dual Sync Engines:** Choose between `rsync` (default with smart excludes) and `scp`.
+  - **Enhanced Visibility:** Supports verbose modes (`-v`, `-vv`, `-vvv`) and segmented output per host.
+  - **Safe Operation:** Includes `--dry-run` mode for testing and `--serial` mode for sequential sync.
+  - **Config File Support:** Read host lists from YAML-style config files.
+  - **Location:** `~/.nicetools/bin/SyncToHosts`
+
 ### 🌐 SSH Tunnel Systemd Service
 
 - **Automatic SSH Tunnel Setup:**  

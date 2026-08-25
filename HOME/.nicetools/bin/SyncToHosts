@@ -1,0 +1,761 @@
+#!/bin/bash
+####################################################################################################
+# @file     SyncToHosts
+# @brief    Universal multi-host file/directory synchronization tool.
+#
+# @author   sheer.rey<sheer.rey@gmail.com>
+# @date     07/31/2026
+# @version  2.0
+####################################################################################################
+
+# script root directory
+script_root="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+# load predefined variables and functions
+if [ -f "${script_root}/../predefined" ]; then
+    source "${script_root}/../predefined"
+else
+    PrintError "predefined file not found in ${script_root}!"
+    exit 1
+fi
+
+# ============================================================================
+# Configuration constants
+# ============================================================================
+# Support test environment variable to speed up testing
+readonly DEFAULT_CONNECT_TIMEOUT="${ST_SSH_TIMEOUT:-5}"
+readonly DEFAULT_RSYNC_TIMEOUT=30
+readonly DEFAULT_SYNC_ENGINE="rsync"
+
+# Default exclude patterns
+declare -a DEFAULT_EXCLUDES=(
+    ".git"
+    "*.log"
+    "known_hosts*"
+)
+
+# ============================================================================
+# Global variables
+# ============================================================================
+
+# Command-line arguments
+declare -a ARG_HOSTS=()
+declare -a ARG_SOURCES=()
+declare -a ARG_FILES=()
+ARG_DST=""
+declare -a ARG_EXCLUDES=()
+ARG_CONFIG=""
+ARG_CONNECT_TIMEOUT=""
+ARG_RSYNC_TIMEOUT=""
+ARG_CONCURRENT_JOBS=""
+
+# Runtime flags
+VERBOSE_LEVEL=0
+SERIAL_MODE=false
+DRY_RUN=false
+SYNC_ENGINE="$DEFAULT_SYNC_ENGINE"
+
+# Host list and sync results
+declare -a HOST_LIST=()
+declare -A SYNC_RESULTS=()
+
+# Concurrency control (parallel mode)
+declare -A JOB_PIDS=()
+declare -A JOB_TMPFILES=()
+declare -A JOB_EXIT_CODES=()
+
+# ============================================================================
+# Help
+# ============================================================================
+function PrintHelp {
+    cat <<EOF
+Usage: $(basename "${BASH_SOURCE[0]}") [OPTIONS]
+
+Sync local files/directories to multiple remote hosts.
+
+OPTIONS:
+  General:
+    -h, --help               Print this help message and exit
+    -v                       Increase verbosity (use -vv or -vvv for more detail)
+    --serial                 Serial sync (one host at a time, default: parallel)
+    --dry-run                Simulate sync without actually transferring files
+
+  Host selection:
+    --hosts PATTERN          Target host pattern:
+                               - Wildcards match SSH config hosts: --hosts "Hygon-*"
+                               - Comma-separated list:             --hosts "host1,host2"
+                               - Direct IP or user@host:           --hosts "192.168.1.10"
+                               - Mix freely:                       --hosts "Hygon-*,10.0.0.5"
+    -c, --config FILE        Read host list from config file (one pattern per line)
+    --all                    Sync to ALL hosts defined in SSH config
+
+  Source/Destination:
+    -s, --src PATTERN        Source directory pattern (trailing / added automatically)
+    -f, --file PATTERN       Source file pattern
+    -d, --dst PATH          Destination path on remote host (required)
+
+  Sync engine options:
+    --rsync                  Use rsync for sync (default)
+    --scp                    Use scp for sync
+    -e, --exclude PATTERN    Exclude pattern (repeatable)
+    --timeout SECONDS        Sync timeout (default: ${DEFAULT_RSYNC_TIMEOUT})
+    --ssh-timeout SECONDS    SSH connection timeout (default: ${DEFAULT_CONNECT_TIMEOUT})
+
+  Concurrency:
+    -j, --jobs N             Max concurrent sync jobs (default: auto-detect)
+
+  Host resolution rules:
+    1. IP address or user@host  -->  Use directly (no SSH config lookup)
+    2. Pattern with * or ?      -->  Match against SSH config (~/.ssh/config)
+    3. Plain hostname           -->  Try SSH config first; fallback to direct host
+
+EXAMPLES:
+    # Wildcard match from SSH config
+    $(basename "${BASH_SOURCE[0]}") --hosts "Hygon-*" --src "~/project" --dst "/home/user/project"
+
+    # Direct IP addresses
+    $(basename "${BASH_SOURCE[0]}") --hosts "192.168.1.10,192.168.1.11" -s "/data/" -d "/backup/"
+
+    # User@host format
+    $(basename "${BASH_SOURCE[0]}") --hosts "deploy@10.0.0.1" -f "config.conf" -d "/etc/"
+
+    # Mix wildcard and direct hosts
+    $(basename "${BASH_SOURCE[0]}") --hosts "Hygon-*,192.168.1.100" -s "/tmp/" -d "/tmp/"
+
+    # Use config file with serial mode
+    $(basename "${BASH_SOURCE[0]}") --config hosts.conf --serial
+
+    # Dry-run with all SSH config hosts
+    $(basename "${BASH_SOURCE[0]}") --all --file "*.conf" -d "/etc/" --dry-run
+EOF
+}
+
+# ============================================================================
+# Logging helpers (verbosity-controlled)
+# ============================================================================
+function log_warn  { [[ $VERBOSE_LEVEL -ge 1 ]] && PrintWarning "$*"; }
+function log_info  { [[ $VERBOSE_LEVEL -ge 1 ]] && PrintInfo "$*"; }
+function log_debug { [[ $VERBOSE_LEVEL -ge 2 ]] && PrintDebug "$*"; }
+function log_trace { [[ $VERBOSE_LEVEL -ge 3 ]] && PrintDebug "[TRACE] $*"; }
+
+# Print a visual separator for per-host output
+function output_separator {
+    local host="$1"
+    local tag="$2"
+    local msg="$3"
+    echo ""
+    echo "========================================"
+    echo "[${tag}] ${host} - ${msg}"
+    echo "========================================"
+}
+
+# ============================================================================
+# Host discovery
+# ============================================================================
+
+## Extract all Host names from ~/.ssh/config
+function parse_ssh_config {
+    local config_file="${HOME}/.ssh/config"
+    [[ ! -f "$config_file" ]] && return 0
+
+    awk '
+        /^[[:space:]]*Host[[:space:]]/ {
+            # Print every token after "Host"
+            for (i = 1; i <= NF; i++) {
+                if ($i == "Host") {
+                    for (j = i + 1; j <= NF; j++) print $j
+                    break
+                }
+            }
+        }
+    ' "$config_file" | grep -v '^[*!]'  # filter out wildcard-default and negation entries
+}
+
+## Check whether a string is a bare IPv4 address
+function is_ip {
+    [[ "$1" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]
+}
+
+## Check whether a string looks like user@host
+function is_user_host {
+    [[ "$1" =~ ^[^@]+@.+$ ]]
+}
+
+## Check whether a string contains wildcard characters
+function has_wildcard {
+    [[ "$1" == *"*"* || "$1" == *"?"* ]]
+}
+
+## Convert a wildcard pattern to a bash regex and test against a hostname
+function match_wildcard {
+    local host="$1"
+    local pattern="$2"
+    local regex
+
+    # Escape dots, then convert * and ? to regex equivalents
+    regex=$(echo "$pattern" | sed 's/\./\\./g; s/\*/.*/g; s/\?/./g')
+    [[ "$host" =~ ^${regex}$ ]]
+}
+
+## Find SSH-config hosts whose names match a pattern
+function match_from_ssh_config {
+    local pattern="$1"
+    parse_ssh_config | while read -r host; do
+        if match_wildcard "$host" "$pattern"; then
+            echo "$host"
+        fi
+    done
+}
+
+## Resolve a SINGLE host pattern (no commas) into one or more concrete host strings.
+##
+## Rules (in order):
+##   1. "all"        -> every Host in ~/.ssh/config
+##   2. Bare IPv4    -> return as-is (direct host)
+##   3. user@host    -> return as-is (direct host)
+##   4. Contains */? -> match against SSH config
+##   5. Otherwise    -> try SSH config; if no match, warn and treat as direct host
+function resolve_single_host {
+    local pattern="$1"
+
+    [[ -z "$pattern" ]] && return 0
+
+    # Rule 1: all
+    if [[ "$pattern" == "all" ]]; then
+        parse_ssh_config
+        return
+    fi
+
+    # Rule 2: bare IP
+    if is_ip "$pattern"; then
+        echo "$pattern"
+        return
+    fi
+
+    # Rule 3: user@host
+    if is_user_host "$pattern"; then
+        echo "$pattern"
+        return
+    fi
+
+    # Rule 4: wildcard pattern
+    if has_wildcard "$pattern"; then
+        match_from_ssh_config "$pattern"
+        return
+    fi
+
+    # Rule 5: plain name — try SSH config first
+    local found
+    found=$(match_from_ssh_config "$pattern")
+    if [[ -n "$found" ]]; then
+        echo "$found"
+    else
+        # Warning to stderr so it doesn't pollute host-list capture on stdout
+        PrintWarning "'$pattern' not found in SSH config, treating as direct host" >&2
+        echo "$pattern"
+    fi
+}
+
+## Resolve a comma-separated (or single) host pattern.
+function get_hosts_from_pattern {
+    local input="$1"
+
+    # Quick check for unambiguous direct formats (no commas)
+    if is_ip "$input"; then
+        echo "$input"
+        return
+    fi
+    if is_user_host "$input" && [[ "$input" != *","* ]]; then
+        echo "$input"
+        return
+    fi
+
+    # Split on comma and resolve each part
+    local saved_ifs="$IFS"
+    IFS=','
+    for part in $input; do
+        # Trim leading/trailing whitespace
+        part=$(echo "$part" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+        [[ -z "$part" ]] && continue
+        resolve_single_host "$part"
+    done
+    IFS="$saved_ifs"
+}
+
+## Read host patterns from a config file (one per line, # comments, blank lines ignored).
+function read_hosts_from_config {
+    local config_file="$1"
+    [[ ! -f "$config_file" ]] && { PrintError "Config file not found: $config_file"; return 1; }
+
+    while read -r line; do
+        # Strip comments and whitespace
+        line="${line%%#*}"
+        line=$(echo "$line" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+        [[ -z "$line" ]] && continue
+        get_hosts_from_pattern "$line"
+    done < "$config_file"
+}
+
+## Build the final (deduplicated) host list from all configured sources.
+function build_host_list {
+    HOST_LIST=()
+    local -a raw_hosts=()
+
+    # 1. From config file
+    if [[ -n "$ARG_CONFIG" ]]; then
+        log_info "Reading hosts from config file: $ARG_CONFIG"
+        while read -r h; do
+            [[ -n "$h" ]] && raw_hosts+=("$h")
+        done < <(read_hosts_from_config "$ARG_CONFIG")
+    fi
+
+    # 2. From command-line --hosts
+    for pattern in "${ARG_HOSTS[@]}"; do
+        while read -r h; do
+            [[ -n "$h" ]] && raw_hosts+=("$h")
+        done < <(get_hosts_from_pattern "$pattern")
+    done
+
+    # Deduplicate while preserving order
+    local -A seen=()
+    for h in "${raw_hosts[@]}"; do
+        if [[ -z "${seen[$h]:-}" ]]; then
+            seen[$h]=1
+            HOST_LIST+=("$h")
+        fi
+    done
+
+    log_debug "Resolved host list (${#HOST_LIST[@]}): ${HOST_LIST[*]}"
+}
+
+# ============================================================================
+# Concurrency control
+# ============================================================================
+
+## Determine the maximum number of concurrent sync jobs.
+function get_concurrent_jobs {
+    local recommended
+
+    # Explicit user override
+    if [[ -n "$ARG_CONCURRENT_JOBS" && "$ARG_CONCURRENT_JOBS" -gt 0 ]]; then
+        echo "$ARG_CONCURRENT_JOBS"
+        return
+    fi
+
+    # Use predefined GetConcurrencyBuildJobs if available
+    if declare -f GetConcurrencyBuildJobs &>/dev/null; then
+        recommended=$(GetConcurrencyBuildJobs 2>/dev/null)
+    fi
+    if [[ -z "$recommended" || "$recommended" -le 0 ]]; then
+        recommended=$(nproc 2>/dev/null || echo 4)
+    fi
+
+    # Cap at host count; minimum 1
+    local host_count=${#HOST_LIST[@]}
+    [[ $recommended -gt $host_count ]] && recommended=$host_count
+    [[ $recommended -lt 1 ]] && recommended=1
+
+    echo "$recommended"
+}
+
+## Block until at least one job slot is free.
+function wait_for_slot {
+    local max_jobs="$1"
+    local host pid running
+
+    while true; do
+        running=0
+        for host in "${!JOB_PIDS[@]}"; do
+            pid="${JOB_PIDS[$host]}"
+            if kill -0 "$pid" 2>/dev/null; then
+                ((running++))
+            else
+                # Collect exit code, then clean up PID tracking
+                wait "$pid" 2>/dev/null
+                JOB_EXIT_CODES["$host"]=$?
+                unset "JOB_PIDS[$host]"
+            fi
+        done
+
+        [[ $running -lt $max_jobs ]] && break
+        sleep 0.1
+    done
+}
+
+## Launch a background sync job for a single host.
+function launch_sync_job {
+    local host="$1"
+
+    wait_for_slot "$(get_concurrent_jobs)"
+
+    local tmpfile
+    tmpfile=$(mktemp "/tmp/sync_${host//\//_}_XXXXXX.log")
+
+    log_debug "Launching sync job for $host (log: $tmpfile)"
+
+    # Fork a subshell that inherits all functions and variables
+    (
+        do_sync "$host"
+    ) > "$tmpfile" 2>&1 &
+
+    local pid=$!
+    JOB_PIDS["$host"]=$pid
+    JOB_TMPFILES["$host"]=$tmpfile
+
+    log_debug "Job started: $host -> PID $pid"
+}
+
+## Wait for every background job and collect results.
+function wait_all_jobs {
+    log_info "Waiting for all sync jobs to finish..."
+
+    # Wait for any remaining running jobs
+    for host in "${!JOB_PIDS[@]}"; do
+        local pid="${JOB_PIDS[$host]}"
+        wait "$pid" 2>/dev/null
+        JOB_EXIT_CODES["$host"]=$?
+        unset "JOB_PIDS[$host]"
+    done
+
+    # Print per-host output in host-list order, then clean up
+    for host in "${HOST_LIST[@]}"; do
+        local tmpfile="${JOB_TMPFILES[$host]:-}"
+        if [[ -n "$tmpfile" && -f "$tmpfile" ]]; then
+            cat "$tmpfile"
+            rm -f "$tmpfile"
+        fi
+    done
+}
+
+# ============================================================================
+# Sync engines
+# ============================================================================
+
+## Build rsync command as a bash array (no eval required).
+function build_rsync_cmd {
+    local host="$1"
+    shift
+    local -a sources=("$@")
+
+    local -a cmd=("rsync" "-aP")
+    cmd+=("--timeout=${ARG_RSYNC_TIMEOUT:-$DEFAULT_RSYNC_TIMEOUT}")
+    cmd+=("-e" "ssh -o ConnectTimeout=${ARG_CONNECT_TIMEOUT:-$DEFAULT_CONNECT_TIMEOUT} -o BatchMode=yes")
+
+    # Add excludes
+    for pattern in "${DEFAULT_EXCLUDES[@]}" "${ARG_EXCLUDES[@]}"; do
+        cmd+=("--exclude=${pattern}")
+    done
+
+    # Add sources
+    for src in "${sources[@]}"; do
+        cmd+=("$src")
+    done
+
+    # Add destination
+    cmd+=("${host}:${ARG_DST}")
+
+    # Return as newline-separated string so caller can reconstruct array
+    printf '%s\n' "${cmd[@]}"
+}
+
+## Build scp command as a bash array (no eval required).
+function build_scp_cmd {
+    local host="$1"
+    shift
+    local -a sources=("$@")
+
+    local -a cmd=("scp" "-r")
+    cmd+=("-o" "ConnectTimeout=${ARG_CONNECT_TIMEOUT:-$DEFAULT_CONNECT_TIMEOUT}")
+    cmd+=("-o" "BatchMode=yes")
+
+    for src in "${sources[@]}"; do
+        cmd+=("$src")
+    done
+
+    cmd+=("${host}:${ARG_DST}")
+
+    printf '%s\n' "${cmd[@]}"
+}
+
+## Check whether a host is reachable via SSH.
+function test_host_connection {
+    local host="$1"
+    local timeout="${ARG_CONNECT_TIMEOUT:-$DEFAULT_CONNECT_TIMEOUT}"
+
+    log_trace "Testing SSH connection to $host (timeout=${timeout}s)"
+
+    timeout "$timeout" \
+        ssh \
+            -o ConnectTimeout="$timeout" \
+            -o ConnectionAttempts=1 \
+            -o BatchMode=yes \
+            "$host" "exit" \
+        >/dev/null 2>&1
+}
+
+## Sync sources to a single host.
+##
+## Return: 0 = success, 1 = unreachable, 2 = sync failed.
+function do_sync {
+    local host="$1"
+
+    # --- Connection test ---
+    if ! test_host_connection "$host"; then
+        output_separator "$host" "SKIP" "Unreachable"
+        return 1
+    fi
+
+    # --- Build command ---
+    local -a sync_cmd=()
+    local line
+
+    if [[ "$SYNC_ENGINE" == "scp" ]]; then
+        while IFS= read -r line; do
+            sync_cmd+=("$line")
+        done < <(build_scp_cmd "$host" "${ARG_SOURCES[@]}" "${ARG_FILES[@]}")
+    else
+        while IFS= read -r line; do
+            sync_cmd+=("$line")
+        done < <(build_rsync_cmd "$host" "${ARG_SOURCES[@]}" "${ARG_FILES[@]}")
+    fi
+
+    log_debug "Sync command: ${sync_cmd[*]}"
+
+    # --- Execute ---
+    if [[ "$DRY_RUN" == "true" ]]; then
+        output_separator "$host" "DRY-RUN" "Would sync"
+        echo "  Command: ${sync_cmd[*]}"
+        return 0
+    fi
+
+    output_separator "$host" "SYNC" "Starting"
+    if "${sync_cmd[@]}"; then
+        output_separator "$host" "OK" "Succeeded"
+        return 0
+    else
+        output_separator "$host" "FAIL" "Sync error (exit code: $?)"
+        return 2
+    fi
+}
+
+# ============================================================================
+# Argument parsing
+# ============================================================================
+
+function parse_args {
+    local sopt="hvs:f:d:c:e:j:"
+    local lopt="help,verbose,src:,file:,dest:,config:,hosts:,exclude:,timeout:,ssh-timeout:,jobs:,serial,dry-run,scp,rsync,all"
+
+    if ! ParseArguments "$(basename "${BASH_SOURCE[0]}")" $sopt $lopt "$@"; then
+        exit 1
+    fi
+    eval set -- "$parsed_args"
+
+    while true; do
+        case "$1" in
+            -h|--help)
+                PrintHelp
+                exit 0
+                ;;
+            -v|--verbose)
+                VERBOSE_LEVEL=$((VERBOSE_LEVEL + 1))
+                shift
+                ;;
+            -s|--src)
+                ARG_SOURCES+=("$2")
+                shift 2
+                ;;
+            -f|--file)
+                ARG_FILES+=("$2")
+                shift 2
+                ;;
+            -d|--dst)
+                ARG_DST="$2"
+                shift 2
+                ;;
+            -c|--config)
+                ARG_CONFIG="$2"
+                shift 2
+                ;;
+            --hosts)
+                ARG_HOSTS+=("$2")
+                shift 2
+                ;;
+            -e|--exclude)
+                ARG_EXCLUDES+=("$2")
+                shift 2
+                ;;
+            --timeout)
+                ARG_RSYNC_TIMEOUT="$2"
+                shift 2
+                ;;
+            --ssh-timeout)
+                ARG_CONNECT_TIMEOUT="$2"
+                shift 2
+                ;;
+            -j|--jobs)
+                ARG_CONCURRENT_JOBS="$2"
+                shift 2
+                ;;
+            --serial)
+                SERIAL_MODE=true
+                shift
+                ;;
+            --dry-run)
+                DRY_RUN=true
+                # When dry-running, serial mode gives cleaner output
+                SERIAL_MODE=true
+                shift
+                ;;
+            --scp)
+                SYNC_ENGINE="scp"
+                shift
+                ;;
+            --rsync)
+                SYNC_ENGINE="rsync"
+                shift
+                ;;
+            --all)
+                ARG_HOSTS+=("all")
+                shift
+                ;;
+            --)
+                shift
+                break
+                ;;
+            *)
+                PrintError "unrecognized option: $1"
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# ============================================================================
+# Validation
+# ============================================================================
+
+function validate_args {
+    local errors=0
+
+    if [[ ${#ARG_SOURCES[@]} -eq 0 && ${#ARG_FILES[@]} -eq 0 ]]; then
+        PrintError "At least one of --src or --file must be specified"
+        errors=$((errors + 1))
+    fi
+
+    if [[ -z "$ARG_DST" ]]; then
+        PrintError "--dst is required"
+        errors=$((errors + 1))
+    fi
+
+    # Warn about non-existent local sources (non-fatal — may be glob patterns)
+    for src in "${ARG_SOURCES[@]}" "${ARG_FILES[@]}"; do
+        if [[ ! -e "$src" ]]; then
+            PrintWarning "Local source does not exist (yet): $src"
+        fi
+    done
+
+    return $errors
+}
+
+# ============================================================================
+# Summary
+# ============================================================================
+
+function print_summary {
+    local total="$1"
+
+    echo ""
+    echo "========================================"
+    echo "Sync Summary"
+    echo "========================================"
+
+    local count_ok=0 count_skip=0 count_fail=0
+    for host in "${HOST_LIST[@]}"; do
+        local status="${SYNC_RESULTS[$host]:-UNKNOWN}"
+        case "$status" in
+            OK)   ((count_ok++));   PrintInfo    "[OK]   $host" ;;
+            SKIP) ((count_skip++)); PrintWarning "[SKIP] $host" ;;
+            FAIL) ((count_fail++)); PrintError   "[FAIL] $host" ;;
+            *)    ((count_fail++)); PrintError   "[?]    $host ($status)" ;;
+        esac
+    done
+
+    echo ""
+    PrintInfo "Total: $total  OK: $count_ok  SKIP: $count_skip  FAIL: $count_fail"
+}
+
+# ============================================================================
+# Main Body
+# ============================================================================
+
+function main {
+    # --- Parse & validate ---
+    parse_args "$@"
+    validate_args || exit 1
+
+    # --- Discover hosts ---
+    log_info "Discovering target hosts..."
+    build_host_list
+
+    if [[ ${#HOST_LIST[@]} -eq 0 ]]; then
+        PrintError "No hosts found to sync"
+        exit 1
+    fi
+
+    # --- Pre-flight summary ---
+    echo ""
+    PrintInfo "Sync plan:"
+    PrintInfo "  Hosts:       ${#HOST_LIST[@]}"
+    PrintInfo "  Destination: $ARG_DST"
+    PrintInfo "  Engine:      $SYNC_ENGINE"
+    PrintInfo "  Sources:     ${#ARG_SOURCES[@]} dir(s), ${#ARG_FILES[@]} file(s)"
+    if [[ "$SERIAL_MODE" == "true" ]]; then
+        PrintInfo "  Mode:        Serial"
+    else
+        PrintInfo "  Mode:        Parallel ($(get_concurrent_jobs) concurrent jobs)"
+    fi
+    [[ "$DRY_RUN" == "true" ]] && PrintInfo "  *** DRY-RUN MODE ***"
+    echo ""
+
+    # --- Sync ---
+    if [[ "$SERIAL_MODE" == "true" ]]; then
+        # ---- Serial path ----
+        for host in "${HOST_LIST[@]}"; do
+            do_sync "$host"
+            local rc=$?
+            case $rc in
+                0) SYNC_RESULTS["$host"]="OK"   ;;
+                1) SYNC_RESULTS["$host"]="SKIP" ;;
+                *) SYNC_RESULTS["$host"]="FAIL" ;;
+            esac
+        done
+    else
+        # ---- Parallel path ----
+        for host in "${HOST_LIST[@]}"; do
+            launch_sync_job "$host"
+        done
+
+        # Wait for completion (output is printed inside)
+        wait_all_jobs
+
+        # Collect results from exit codes
+        for host in "${HOST_LIST[@]}"; do
+            local rc="${JOB_EXIT_CODES[$host]:-1}"
+            case $rc in
+                0) SYNC_RESULTS["$host"]="OK"   ;;
+                1) SYNC_RESULTS["$host"]="SKIP" ;;
+                *) SYNC_RESULTS["$host"]="FAIL" ;;
+            esac
+        done
+    fi
+
+    # --- Summary ---
+    print_summary "${#HOST_LIST[@]}"
+
+    echo ""
+    PrintInfo "All done."
+}
+
+# --- Run ---
+main "$@"
