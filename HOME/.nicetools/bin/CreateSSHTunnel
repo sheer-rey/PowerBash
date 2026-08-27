@@ -27,13 +27,14 @@ fi
 jump_profile=""
 jump_user=""
 jump_host=""
+local_port=""
 ssh_pid=""
 port_file=""
 verbose=0
 
 # predefined options
-sopt='vP:U:H:h'
-lopt='verbose,jump-profile:,jump-user:,jump-host:,help'
+sopt='vP:U:H:p:h'
+lopt='verbose,jump-profile:,jump-user:,jump-host:,port:,help'
 
 # predefined functions
 function PrintHelp {
@@ -42,6 +43,7 @@ Usage: $(basename "${BASH_SOURCE[0]}") <remote_ip:port> [options]
 
 Options:
   -v, --verbose                 Enable verbose output of ssh command
+  -p, --port <PORT>             Specify local port for the tunnel
   -P, --jump-profile <PROFILE>  Use SSH configuration profile predefined in ~/.ssh/config
   -U, --jump-user <USER>        Specify jump user
   -H, --jump-host <HOST>        Specify jump host
@@ -56,6 +58,7 @@ Usage: $(basename "${BASH_SOURCE[0]}") <remote_ip:port> [options]
 
 Options:
   -v            Enable verbose output of ssh command
+  -p <PORT>     Specify local port for the tunnel
   -P <PROFILE>  Use SSH configuration profile predefined in ~/.ssh/config
   -U <USER>     Specify jump user
   -H <HOST>     Specify jump host
@@ -126,6 +129,10 @@ while true; do
         -v|--verbose)
             verbose=1
             shift
+            ;;
+        -p|--port)
+            local_port="$2"
+            shift 2
             ;;
         -P|--jump-profile)
             jump_profile="$2"
@@ -203,9 +210,18 @@ SSH_TUNNEL_LOCK_FILE="/run/lock/ssh_tunnel.lock"
 exec {SSH_TUNNEL_LOCK_FD}>"$SSH_TUNNEL_LOCK_FILE"
 flock -x "${SSH_TUNNEL_LOCK_FD}"
 
-# Port selection 
-local_port=$(FindFreePort)
-PrintInfo "Selected local port $local_port"
+# Port selection
+if [ -n "$local_port" ]; then
+    # User-specified port: validate it is free
+    if ss -ltnH "( sport = :$local_port )" 2>&1 | grep -q . &> /dev/null; then
+        PrintError "Local port $local_port is already in use"
+        exit 1
+    fi
+    PrintInfo "Using specified local port $local_port"
+else
+    local_port=$(FindFreePort)
+    PrintInfo "Selected local port $local_port"
+fi
 
 # Generate port file
 port_file=$(GeneratePortFile)
