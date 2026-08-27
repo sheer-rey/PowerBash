@@ -103,8 +103,11 @@ function Cleanup {
         PrintInfo "Removed port file: $port_file"
     fi
 
-    flock -u "${SSH_TUNNEL_LOCK_FD}" &>/dev/null || true
-    exec {SSH_TUNNEL_LOCK_FD}>&-
+    # Only release the lock/fd if it was actually opened
+    if [ -n "${SSH_TUNNEL_LOCK_FD:-}" ]; then
+        flock -u "${SSH_TUNNEL_LOCK_FD}" &>/dev/null || true
+        exec {SSH_TUNNEL_LOCK_FD}>&-
+    fi
 }
 
 # register trap handler
