@@ -95,6 +95,7 @@ for convenience, clarity, and efficiency.
   - **Enhanced Visibility:** Supports verbose modes (`-v`, `-vv`, `-vvv`) and segmented output per host.
   - **Safe Operation:** Includes `--dry-run` mode for testing and `--serial` mode for sequential sync.
   - **Config File Support:** Read host lists from YAML-style config files.
+  - **Tested:** 101 unit tests covering all major functionality.
   - **Location:** `~/.nicetools/bin/SyncToHosts`
 
 ### 🌐 SSH Tunnel Systemd Service
@@ -105,6 +106,13 @@ for convenience, clarity, and efficiency.
   - Validates connectivity before configuring the service.
   - Provides interactive prompts for configuration during installation.
   - Review `$INSTALL_PATH/.nicetools/doc/ssh_tunnel/README.md` for more details.
+
+### 🧪 Testing
+
+- **Automated Test Suite:** Comprehensive test coverage for `SyncToHosts` with 101 unit tests.
+- **Location:** `tests/` directory contains test infrastructure and component-specific tests.
+- **Running Tests:** `bash tests/run_tests.sh` - runs all tests and produces detailed output.
+- **Features Tested:** Host resolution, parallel/serial modes, concurrency control, argument validation, and more.
 
 ## Installation
 
