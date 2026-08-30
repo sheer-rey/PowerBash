@@ -92,7 +92,7 @@ OPTIONS:
   Source/Destination:
     -s, --src PATTERN        Source directory pattern (trailing / added automatically)
     -f, --file PATTERN       Source file pattern
-    -d, --dst PATH          Destination path on remote host (required)
+    -d, --dst PATH           Destination path on remote host (required)
 
   Sync engine options:
     --rsync                  Use rsync for sync (default)
@@ -127,6 +127,12 @@ EXAMPLES:
 
     # Dry-run with all SSH config hosts
     $(basename "${BASH_SOURCE[0]}") --all --file "*.conf" -d "/etc/" --dry-run
+
+IMPORTANT:
+    Arguments that contain shell wildcards (* or ?) MUST be quoted, otherwise
+    the shell expands them into local filenames before this script sees them.
+    For example, use --hosts "Hygon-*" and --file "id_rsa*", not --hosts Hygon-*
+    or --file id_rsa*.
 EOF
 }
 
@@ -544,7 +550,7 @@ function do_sync {
 
 function parse_args {
     local sopt="hvs:f:d:c:e:j:"
-    local lopt="help,verbose,src:,file:,dest:,config:,hosts:,exclude:,timeout:,ssh-timeout:,jobs:,serial,dry-run,scp,rsync,all"
+    local lopt="help,verbose,src:,file:,dst:,config:,hosts:,exclude:,timeout:,ssh-timeout:,jobs:,serial,dry-run,scp,rsync,all"
 
     if ! ParseArguments "$(basename "${BASH_SOURCE[0]}")" $sopt $lopt "$@"; then
         exit 1

@@ -114,6 +114,10 @@ for convenience, clarity, and efficiency.
 - **Running Tests:** `bash tests/run_tests.sh` - runs all tests and produces detailed output.
 - **Features Tested:** Host resolution, parallel/serial modes, concurrency control, argument validation, and more.
 
+> **Quoting reminder:** Arguments to `SyncToHosts` that contain shell wildcards (`*`, `?`)
+> must be quoted so the shell does not expand them into local filenames before the script
+> receives them. For example, use `--hosts "Hygon-*"` and `--file "id_rsa*"`.
+
 ## Installation
 
 1. **Clone the repository with submodules:**
