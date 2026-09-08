@@ -33,6 +33,10 @@ for convenience, clarity, and efficiency.
 - **Automatic Sourcing:**  
   - Loads additional aliases from `~/.bash_aliases` if present.
   - Enables programmable completion if available.
+- **Bash Completion:**  
+  - Provides tab completion for the exported functions (`osc_yank`, `fix_owner`) and nicetools
+    scripts (`ArchivetoRDN`, `CreateSSHTunnel`, `SyncToHosts`).
+  - Completions are loaded automatically from `~/.nicetools/completions/powerbash-completions.bash`.
 
 ### 🛠️ User-Scoped Git Configuration
 
@@ -161,6 +165,7 @@ for convenience, clarity, and efficiency.
 - **Location:** `tests/` directory contains test infrastructure and component-specific tests.
 - **Running Tests:** `bash tests/run_tests.sh` - runs all tests and produces detailed output.
 - **Features Tested:** Host resolution, parallel/serial modes, concurrency control, argument validation, and more.
+- **Components:** `sync-to-hosts` and `completions` (bash completion bindings and option completion).
 
 > **Quoting reminder:** Arguments to `SyncToHosts` that contain shell wildcards (`*`, `?`)
 > must be quoted so the shell does not expand them into local filenames before the script
@@ -397,6 +402,7 @@ sudo apt install -y git tmux vim neovim python3 bat ack silversearcher-ag univer
 - You can further add your own aliases to `~/.bash_aliases`.
 - You can further extend Vim with more plugins by adding them to `HOME/.vim/bundle/`.
 - You can further extend Neovim with more plugins by adding them to `HOME/.config/nvim/lua/plugins/`.
+- You can further extend bash completion by adding functions to `HOME/.nicetools/completions/powerbash-completions.bash`.
 
 
 ## Thanks

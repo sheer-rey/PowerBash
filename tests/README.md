@@ -21,6 +21,7 @@ tests/
 
 # Run a specific component
 ./tests/run_tests.sh sync-to-hosts
+./tests/run_tests.sh completions
 ```
 
 ## How to add new tests

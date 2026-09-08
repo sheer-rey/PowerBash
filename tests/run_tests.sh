@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Components to test (add new ones here)
-COMPONENTS=("sync-to-hosts")
+COMPONENTS=("sync-to-hosts" "completions")
 
 # Source test runner
 source "$SCRIPT_DIR/test_runner.sh"

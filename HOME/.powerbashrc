@@ -322,6 +322,11 @@ if ! shopt -oq posix; then
     fi
 fi
 
+# load PowerBash custom completions for exported functions and nicetools scripts
+if [ -f "${HOME}/.nicetools/completions/powerbash-completions.bash" ]; then
+    . "${HOME}/.nicetools/completions/powerbash-completions.bash"
+fi
+
 # override the default man pager with bat while bat is installed
 # this will also set alias 'bat' to 'batcat' in the case that some distros
 # like Arch Linux or Debian use 'batcat' as the binary name for bat
