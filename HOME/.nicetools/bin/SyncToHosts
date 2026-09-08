@@ -54,6 +54,7 @@ VERBOSE_LEVEL=0
 SERIAL_MODE=false
 DRY_RUN=false
 SHOW_OUTPUT=false
+NO_DEFAULT_EXCLUDES=false
 SYNC_ENGINE="$DEFAULT_SYNC_ENGINE"
 
 # Host list and sync results
@@ -100,8 +101,12 @@ OPTIONS:
     --rsync                  Use rsync for sync (default)
     --scp                    Use scp for sync
     -e, --exclude PATTERN    Exclude pattern (repeatable)
+    --no-default-excludes    Do not apply the default exclude patterns
     --timeout SECONDS        Sync timeout (default: ${DEFAULT_RSYNC_TIMEOUT})
     --ssh-timeout SECONDS    SSH connection timeout (default: ${DEFAULT_CONNECT_TIMEOUT})
+
+  Default exclude patterns:
+    $(IFS=', '; echo "${DEFAULT_EXCLUDES[*]}")
 
   Concurrency:
     -j, --jobs N             Max concurrent sync jobs (default: auto-detect)
@@ -451,10 +456,18 @@ function build_rsync_cmd {
     cmd+=("--timeout=${ARG_RSYNC_TIMEOUT:-$DEFAULT_RSYNC_TIMEOUT}")
     cmd+=("-e" "ssh -o ConnectTimeout=${ARG_CONNECT_TIMEOUT:-$DEFAULT_CONNECT_TIMEOUT} -o BatchMode=yes")
 
-    # Add excludes
-    for pattern in "${DEFAULT_EXCLUDES[@]}" "${ARG_EXCLUDES[@]}"; do
-        cmd+=("--exclude=${pattern}")
-    done
+    # Add excludes. By default the built-in patterns are applied together with
+    # any user-supplied ones. With --no-default-excludes, only the user-supplied
+    # patterns are used (the defaults are fully replaced).
+    if [[ "$NO_DEFAULT_EXCLUDES" == "true" ]]; then
+        for pattern in "${ARG_EXCLUDES[@]}"; do
+            cmd+=("--exclude=${pattern}")
+        done
+    else
+        for pattern in "${DEFAULT_EXCLUDES[@]}" "${ARG_EXCLUDES[@]}"; do
+            cmd+=("--exclude=${pattern}")
+        done
+    fi
 
     # Add sources
     for src in "${sources[@]}"; do
@@ -569,7 +582,7 @@ function do_sync {
 
 function parse_args {
     local sopt="hvs:f:d:c:e:j:"
-    local lopt="help,verbose,src:,file:,dst:,config:,hosts:,exclude:,timeout:,ssh-timeout:,jobs:,serial,dry-run,show-output,scp,rsync,all"
+    local lopt="help,verbose,src:,file:,dst:,config:,hosts:,exclude:,timeout:,ssh-timeout:,jobs:,serial,dry-run,show-output,no-default-excludes,scp,rsync,all"
 
     if ! ParseArguments "$(basename "${BASH_SOURCE[0]}")" $sopt $lopt "$@"; then
         exit 1
@@ -619,6 +632,10 @@ function parse_args {
             -e|--exclude)
                 ARG_EXCLUDES+=("$2")
                 shift 2
+                ;;
+            --no-default-excludes)
+                NO_DEFAULT_EXCLUDES=true
+                shift
                 ;;
             --timeout)
                 ARG_RSYNC_TIMEOUT="$2"

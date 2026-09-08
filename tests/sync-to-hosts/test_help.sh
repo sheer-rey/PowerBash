@@ -76,6 +76,18 @@ run_tests() {
         "$SCRIPT --ssh-timeout 1 -h" \
         assert_contains "--show-output"
 
+    run_test_case "--no-default-excludes option documented" \
+        "$SCRIPT --ssh-timeout 1 -h" \
+        assert_contains "--no-default-excludes"
+
+    run_test_case "Default exclude patterns documented" \
+        "$SCRIPT --ssh-timeout 1 -h" \
+        assert_contains "Default exclude patterns"
+
+    run_test_case "Default exclude .git documented" \
+        "$SCRIPT --ssh-timeout 1 -h" \
+        assert_contains ".git"
+
     run_test_case "--all option documented" \
         "$SCRIPT --ssh-timeout 1 -h" \
         assert_contains "ALL hosts"
