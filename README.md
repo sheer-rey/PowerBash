@@ -18,6 +18,11 @@ for convenience, clarity, and efficiency.
 - **Clipboard Integration:**  
   - Includes the `osc_yank` function for copying text to the system clipboard via OSC52 escape
     sequences, supporting xterm, tmux, and screen.
+- **Ownership Repair:**  
+  - Includes the `fix_owner` function to recursively change the owner and group of one or more
+    directories to the current user, automatically using `sudo` when necessary.
+  - Accepts multiple directories (defaults to `$HOME`), supports `--dereference` /
+    `--no-dereference` for symlink handling, and reports per-directory errors.
 - **Improved History and Usability:**  
   - Appends to history, ignores duplicates, and sets sensible history sizes.
   - Enables useful shell options: `globstar`, `checkwinsize`, `autoindent`, and more.
@@ -81,11 +86,54 @@ for convenience, clarity, and efficiency.
   - **vim-polyglot:** Language pack for Vim.
   - **xterm-color-table.vim:** Color table utility.
 
+### 🧩 Neovim Configuration
+
+- **Modern Lua-based Config:**  
+  - Entry point at `~/.config/nvim/init.lua`, organized into `core/` (options, keymaps, autocmds, utils)
+    and `plugins/` modules.
+  - Uses **lazy.nvim** as the plugin manager, bootstrapped automatically on first launch.
+- **Pre-configured Plugins (via lazy.nvim):**
+  - **dracula:** Dracula color scheme.
+  - **lualine:** Lightweight, customizable statusline.
+  - **bufferline:** Buffer tabs.
+  - **nvimtree:** File explorer sidebar.
+  - **telescope:** Fuzzy finder for files, buffers, and more.
+  - **treesitter:** Advanced syntax highlighting and text objects.
+  - **lsp:** Language Server Protocol integration.
+  - **cmp:** Auto-completion engine.
+  - **gitsigns:** Git diff indicators in the sign column.
+  - **indentline:** Visual indentation guides.
+  - **autopairs:** Automatic insertion of matching brackets and quotes.
+  - **comment:** Easy commenting.
+  - **aerial:** Symbol outline.
+  - **legacy:** Vim plugins kept for compatibility.
+
+### 🎨 Code Formatting & LSP
+
+- **`.clang-format`:**  
+  - Google-based style with 4-space indentation, 100-column limit, and Doxygen comment formatting.
+- **`.config/clangd/config.yaml`:**  
+  - Global clangd configuration with Doxygen comment format.
+
 ### 🔌 Nicetools Package Management
 
 - **Integrated Nicetools:**  
   - Provides predefined scripts and functions for common tasks.
   - Supports automatic PATH configuration for installed tools using `POWERBASH_ADD_BIN_PATH=1`.
+
+- **`predefined` Library:**  
+  - A shared bash library (`~/.nicetools/predefined`) providing:
+    - ANSI font/color formatting variables (`font_*`).
+    - Logging functions: `PrintError`, `PrintWarning`, `PrintInfo`, `PrintDebug`.
+    - Configurable log level via `SC_LOG_LEVEL` (`quiet`, `error`, `warning`, `info`, `debug`).
+
+- **`ArchivetoRDN`:**  
+  - Archive files and transfer them to a remote server via SFTP.
+  - Supports custom host/user, working directory, transfer, and cleanup options.
+
+- **`CreateSSHTunnel`:**  
+  - Create an SSH tunnel to a remote server, optionally through a jump host.
+  - Supports SSH config profiles (`-P`), jump user/host, local port, and verbose output.
 
 - **Multi-Host Synchronization (SyncToHosts):**  
   - **Universal Multi-Host Sync Tool:** A powerful script for synchronizing files/directories to multiple remote hosts simultaneously.
@@ -159,6 +207,12 @@ for convenience, clarity, and efficiency.
     vim
     ```
 
+8. **Open Neovim to enjoy the modern Lua-based environment:**
+    ```bash
+    nvim
+    ```
+    On first launch, lazy.nvim will bootstrap and install all configured plugins automatically.
+
 
 ## Uninstallation
 
@@ -177,6 +231,13 @@ This will remove the installed configuration files from your `$HOME` directory.
 - Enjoy a prompt that shows command status, Git branch, and full PWD.  
   <img src="./Examples/bash.png" width="800" alt="PowerBash Prompt">
 - Use `osc_yank` to copy text to your clipboard from the terminal.
+- Use `fix_owner` to recursively repair directory ownership:
+  ```bash
+  fix_owner                        # fix $HOME ownership
+  fix_owner /path/to/dir           # fix a specific directory
+  fix_owner /dir1 /dir2            # fix multiple directories
+  fix_owner --no-dereference /dir  # change symlinks themselves, not their targets
+  ```
 - Use handy aliases like `ll`, `la`, and `alert`.  
 
 ### Git
@@ -309,6 +370,7 @@ In order to make PowerBash works properly, ensure you have the following tools i
 - `git`
 - `tmux` (almost versions is compatible, but 3.4 and above recommended)
 - `vim` (almost versions is compatible, but 8.1 and above recommended)
+- `nvim` (for the Neovim configuration)
 - `python2/3` (for various Vim plugins)
 
 And to make full use of all features, it's recommended to also have the following tools:
@@ -320,10 +382,12 @@ And to make full use of all features, it's recommended to also have the followin
 - `gtags-cscope` (for cscope database generation and code navigation in Vim)
 - `rg` (ripgrep, for fuzzy finding in Vim)
 - `cppman` (for C++ manual integration in Vim)
+- `clangd` (for C/C++ language server in Neovim)
+- `clang-format` (for C/C++ code formatting)
 
 With Ubuntu22.04 or later, you can install these tools using:
 ```bash
-sudo apt install -y git tmux vim python3 bat ack silversearcher-ag universal-ctags cscope global ripgrep cppman
+sudo apt install -y git tmux vim neovim python3 bat ack silversearcher-ag universal-ctags cscope global ripgrep cppman clangd clang-format
 ```
 
 
@@ -332,6 +396,7 @@ sudo apt install -y git tmux vim python3 bat ack silversearcher-ag universal-cta
 - You can further customize any configuration file in your `HOME/` directory.
 - You can further add your own aliases to `~/.bash_aliases`.
 - You can further extend Vim with more plugins by adding them to `HOME/.vim/bundle/`.
+- You can further extend Neovim with more plugins by adding them to `HOME/.config/nvim/lua/plugins/`.
 
 
 ## Thanks
