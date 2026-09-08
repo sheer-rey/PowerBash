@@ -53,6 +53,7 @@ ARG_CONCURRENT_JOBS=""
 VERBOSE_LEVEL=0
 SERIAL_MODE=false
 DRY_RUN=false
+SHOW_OUTPUT=false
 SYNC_ENGINE="$DEFAULT_SYNC_ENGINE"
 
 # Host list and sync results
@@ -79,6 +80,7 @@ OPTIONS:
     -v                       Increase verbosity (use -vv or -vvv for more detail)
     --serial                 Serial sync (one host at a time, default: parallel)
     --dry-run                Simulate sync without actually transferring files
+    --show-output            Print per-host transfer output after sync completes
 
   Host selection:
     --hosts PATTERN          Target host pattern:
@@ -423,7 +425,9 @@ function wait_all_jobs {
         unset "JOB_PIDS[$host]"
     done
 
-    # Print per-host output in host-list order, then clean up
+    # Print per-host output in host-list order, then clean up.
+    # The job tmpfile always contains the per-host separators/status; the
+    # rsync transfer output inside is already gated by --show-output in do_sync.
     for host in "${HOST_LIST[@]}"; do
         local tmpfile="${JOB_TMPFILES[$host]:-}"
         if [[ -n "$tmpfile" && -f "$tmpfile" ]]; then
@@ -535,13 +539,28 @@ function do_sync {
     fi
 
     output_separator "$host" "SYNC" "Starting"
-    if "${sync_cmd[@]}"; then
+
+    # Capture the transfer output so it can be suppressed by default and only
+    # replayed when --show-output is enabled. This keeps serial and parallel
+    # modes consistent.
+    local sync_output
+    sync_output=$(mktemp "/tmp/sync_out_${host//\//_}_XXXXXX.log")
+
+    local rc
+    if "${sync_cmd[@]}" > "$sync_output" 2>&1; then
         output_separator "$host" "OK" "Succeeded"
-        return 0
+        rc=0
     else
         output_separator "$host" "FAIL" "Sync error (exit code: $?)"
-        return 2
+        rc=2
     fi
+
+    if [[ "$SHOW_OUTPUT" == "true" ]]; then
+        cat "$sync_output"
+    fi
+    rm -f "$sync_output"
+
+    return $rc
 }
 
 # ============================================================================
@@ -550,7 +569,7 @@ function do_sync {
 
 function parse_args {
     local sopt="hvs:f:d:c:e:j:"
-    local lopt="help,verbose,src:,file:,dst:,config:,hosts:,exclude:,timeout:,ssh-timeout:,jobs:,serial,dry-run,scp,rsync,all"
+    local lopt="help,verbose,src:,file:,dst:,config:,hosts:,exclude:,timeout:,ssh-timeout:,jobs:,serial,dry-run,show-output,scp,rsync,all"
 
     if ! ParseArguments "$(basename "${BASH_SOURCE[0]}")" $sopt $lopt "$@"; then
         exit 1
@@ -621,6 +640,10 @@ function parse_args {
                 DRY_RUN=true
                 # When dry-running, serial mode gives cleaner output
                 SERIAL_MODE=true
+                shift
+                ;;
+            --show-output)
+                SHOW_OUTPUT=true
                 shift
                 ;;
             --scp)

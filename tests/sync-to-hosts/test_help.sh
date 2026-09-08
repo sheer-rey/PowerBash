@@ -72,6 +72,10 @@ run_tests() {
         "$SCRIPT --ssh-timeout 1 -h" \
         assert_contains "--dry-run"
 
+    run_test_case "--show-output option documented" \
+        "$SCRIPT --ssh-timeout 1 -h" \
+        assert_contains "--show-output"
+
     run_test_case "--all option documented" \
         "$SCRIPT --ssh-timeout 1 -h" \
         assert_contains "ALL hosts"
