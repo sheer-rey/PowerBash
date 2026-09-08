@@ -47,26 +47,34 @@ run_tests() {
     source "$COMPLETIONS"
     assert_completion _osc_yank "--help" "osc_yank -- completes long options" osc_yank --
     assert_completion _osc_yank "-h --help" "osc_yank - completes short options" osc_yank -
+    assert_completion _osc_yank "-h --help" "osc_yank <space> completes options" osc_yank ""
 
     print_section_header "fix_owner"
 
     assert_completion _fix_owner "--dereference --no-dereference --help" "fix_owner -- completes long options" fix_owner --
     assert_completion _fix_owner "--no-dereference" "fix_owner --no filters prefix" fix_owner --no
     assert_completion _fix_owner "--dereference --no-dereference -h --help" "fix_owner - completes all options" fix_owner -
+    assert_completion _fix_owner "--dereference --no-dereference -h --help" "fix_owner <space> completes options" fix_owner ""
+    assert_completion _fix_owner "--dereference --no-dereference -h --help" "fix_owner <space> after flag completes options" fix_owner --no-dereference ""
 
     print_section_header "ArchivetoRDN"
 
     assert_completion _ArchivetoRDN "--host --user --directory --transfer --delete --delete-all --help" "ArchivetoRDN -- completes long options" ArchivetoRDN --
     assert_completion _ArchivetoRDN "-H --host -U --user -C --directory -t --transfer -d --delete -D --delete-all -h --help" "ArchivetoRDN - completes short options" ArchivetoRDN -
+    assert_completion _ArchivetoRDN "-H --host -U --user -C --directory -t --transfer -d --delete -D --delete-all -h --help" "ArchivetoRDN <space> completes options" ArchivetoRDN ""
 
     print_section_header "CreateSSHTunnel"
 
     assert_completion _CreateSSHTunnel "--verbose --port --jump-profile --jump-user --jump-host --help" "CreateSSHTunnel -- completes long options" CreateSSHTunnel --
     assert_completion _CreateSSHTunnel "-v --verbose -p --port -P --jump-profile -U --jump-user -H --jump-host -h --help" "CreateSSHTunnel - completes short options" CreateSSHTunnel -
+    assert_completion _CreateSSHTunnel "-v --verbose -p --port -P --jump-profile -U --jump-user -H --jump-host -h --help" "CreateSSHTunnel <space> completes options" CreateSSHTunnel ""
+    assert_completion _CreateSSHTunnel "-v --verbose -p --port -P --jump-profile -U --jump-user -H --jump-host -h --help" "CreateSSHTunnel <space> after flag completes options" CreateSSHTunnel -v ""
 
     print_section_header "SyncToHosts"
 
     assert_completion _SyncToHosts "--help --serial --dry-run --show-output --hosts --config --all --src --file --dst --rsync --scp --exclude --no-default-excludes --timeout --ssh-timeout --jobs" "SyncToHosts -- completes long options" SyncToHosts --
     assert_completion _SyncToHosts "--serial --show-output --src --scp --ssh-timeout" "SyncToHosts --s filters prefix" SyncToHosts --s
     assert_completion _SyncToHosts "-h --help -v --serial --dry-run --show-output --hosts -c --config --all -s --src -f --file -d --dst --rsync --scp -e --exclude --no-default-excludes --timeout --ssh-timeout -j --jobs" "SyncToHosts - completes all options" SyncToHosts -
+    assert_completion _SyncToHosts "-h --help -v --serial --dry-run --show-output --hosts -c --config --all -s --src -f --file -d --dst --rsync --scp -e --exclude --no-default-excludes --timeout --ssh-timeout -j --jobs" "SyncToHosts <space> completes options" SyncToHosts ""
+    assert_completion _SyncToHosts "-h --help -v --serial --dry-run --show-output --hosts -c --config --all -s --src -f --file -d --dst --rsync --scp -e --exclude --no-default-excludes --timeout --ssh-timeout -j --jobs" "SyncToHosts <space> after flag completes options" SyncToHosts --serial ""
 }

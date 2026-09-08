@@ -47,7 +47,7 @@ _osc_yank() {
             ;;
     esac
 
-    if [[ "${cur}" == -* ]]; then
+    if [[ "${cur}" == -* || -z "${cur}" ]]; then
         COMPREPLY=( $(compgen -W "-h --help" -- "${cur}") )
         return 0
     fi
@@ -72,7 +72,7 @@ _fix_owner() {
             ;;
     esac
 
-    if [[ "${cur}" == -* ]]; then
+    if [[ "${cur}" == -* || -z "${cur}" ]]; then
         COMPREPLY=( $(compgen -W "--dereference --no-dereference -h --help" -- "${cur}") )
         return 0
     fi
@@ -109,7 +109,7 @@ _ArchivetoRDN() {
             ;;
     esac
 
-    if [[ "${cur}" == -* ]]; then
+    if [[ "${cur}" == -* || -z "${cur}" ]]; then
         COMPREPLY=( $(compgen -W "-H --host -U --user -C --directory -t --transfer -d --delete -D --delete-all -h --help" -- "${cur}") )
         return 0
     fi
@@ -150,7 +150,7 @@ _CreateSSHTunnel() {
             ;;
     esac
 
-    if [[ "${cur}" == -* ]]; then
+    if [[ "${cur}" == -* || -z "${cur}" ]]; then
         COMPREPLY=( $(compgen -W "-v --verbose -p --port -P --jump-profile -U --jump-user -H --jump-host -h --help" -- "${cur}") )
         return 0
     fi
@@ -202,7 +202,7 @@ _SyncToHosts() {
             ;;
     esac
 
-    if [[ "${cur}" == -* ]]; then
+    if [[ "${cur}" == -* || -z "${cur}" ]]; then
         COMPREPLY=( $(compgen -W "-h --help -v --serial --dry-run --show-output --hosts -c --config --all -s --src -f --file -d --dst --rsync --scp -e --exclude --no-default-excludes --timeout --ssh-timeout -j --jobs" -- "${cur}") )
         return 0
     fi
