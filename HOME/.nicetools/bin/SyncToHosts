@@ -565,6 +565,14 @@ function parse_args {
                 ;;
             -v|--verbose)
                 VERBOSE_LEVEL=$((VERBOSE_LEVEL + 1))
+                # Map verbosity to the predefined log level so the Print* helpers
+                # emit output. -v -> info, -vv/-vvv -> debug (trace reuses
+                # PrintDebug with a [TRACE] prefix).
+                if [[ $VERBOSE_LEVEL -ge 2 ]]; then
+                    SC_LOG_LEVEL="debug"
+                else
+                    SC_LOG_LEVEL="info"
+                fi
                 shift
                 ;;
             -s|--src)
