@@ -90,7 +90,7 @@ OPTIONS:
     --all                    Sync to ALL hosts defined in SSH config
 
   Source/Destination:
-    -s, --src PATTERN        Source directory pattern (trailing / added automatically)
+    -s, --src PATTERN        Source directory pattern (trailing / removed automatically)
     -f, --file PATTERN       Source file pattern
     -d, --dst PATH           Destination path on remote host (required)
 
@@ -568,7 +568,9 @@ function parse_args {
                 shift
                 ;;
             -s|--src)
-                ARG_SOURCES+=("$2")
+                # Trim trailing slashes from directory sources to ensure rsync copies
+                # the directory itself, not its contents.
+                ARG_SOURCES+=("${2%/}")
                 shift 2
                 ;;
             -f|--file)
