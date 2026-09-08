@@ -31,6 +31,14 @@ run_tests() {
         "$SCRIPT --ssh-timeout 1 --hosts '10.0.0.1' -s /tmp -d /tmp --dry-run --scp -v 2>&1" \
         assert_contains "Engine:      scp"
 
+    run_test_case "scp with --exclude warns it is ignored" \
+        "$SCRIPT --ssh-timeout 1 --hosts '10.0.0.1' -s /tmp -d /tmp --dry-run --scp -e '*.bak' 2>&1" \
+        assert_contains "scp does not support --exclude"
+
+    run_test_case "scp without --exclude does not warn" \
+        "$SCRIPT --ssh-timeout 1 --hosts '10.0.0.1' -s /tmp -d /tmp --dry-run --scp 2>&1" \
+        assert_not_contains "scp does not support --exclude"
+
     print_section_header "Engine: Combined Options"
 
     run_test_case "scp with --timeout" \

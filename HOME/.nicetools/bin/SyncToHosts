@@ -100,8 +100,8 @@ OPTIONS:
   Sync engine options:
     --rsync                  Use rsync for sync (default)
     --scp                    Use scp for sync
-    -e, --exclude PATTERN    Exclude pattern (repeatable)
-    --no-default-excludes    Do not apply the default exclude patterns
+    -e, --exclude PATTERN    Exclude pattern (repeatable; rsync only, ignored by scp)
+    --no-default-excludes    Do not apply the default exclude patterns (rsync only)
     --timeout SECONDS        Sync timeout (default: ${DEFAULT_RSYNC_TIMEOUT})
     --ssh-timeout SECONDS    SSH connection timeout (default: ${DEFAULT_CONNECT_TIMEOUT})
 
@@ -710,6 +710,12 @@ function validate_args {
             PrintWarning "Local source does not exist (yet): $src"
         fi
     done
+
+    # scp does not support file exclusion. Warn the user so they know the
+    # --exclude patterns (and the default excludes) will not be applied.
+    if [[ "$SYNC_ENGINE" == "scp" && ${#ARG_EXCLUDES[@]} -gt 0 ]]; then
+        PrintWarning "scp does not support --exclude; the exclude patterns will be ignored"
+    fi
 
     return $errors
 }

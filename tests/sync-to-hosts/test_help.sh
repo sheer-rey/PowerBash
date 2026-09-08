@@ -56,6 +56,10 @@ run_tests() {
         "$SCRIPT --ssh-timeout 1 -h" \
         assert_contains "exclude"
 
+    run_test_case "--exclude notes rsync-only" \
+        "$SCRIPT --ssh-timeout 1 -h" \
+        assert_contains "rsync only"
+
     run_test_case "Hosts option documented" \
         "$SCRIPT --ssh-timeout 1 -h" \
         assert_contains "hosts"
