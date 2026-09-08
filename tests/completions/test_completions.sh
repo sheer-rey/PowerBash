@@ -77,4 +77,13 @@ run_tests() {
     assert_completion _SyncToHosts "-h --help -v --serial --dry-run --show-output --hosts -c --config --all -s --src -f --file -d --dst --rsync --scp -e --exclude --no-default-excludes --timeout --ssh-timeout -j --jobs" "SyncToHosts - completes all options" SyncToHosts -
     assert_completion _SyncToHosts "-h --help -v --serial --dry-run --show-output --hosts -c --config --all -s --src -f --file -d --dst --rsync --scp -e --exclude --no-default-excludes --timeout --ssh-timeout -j --jobs" "SyncToHosts <space> completes options" SyncToHosts ""
     assert_completion _SyncToHosts "-h --help -v --serial --dry-run --show-output --hosts -c --config --all -s --src -f --file -d --dst --rsync --scp -e --exclude --no-default-excludes --timeout --ssh-timeout -j --jobs" "SyncToHosts <space> after flag completes options" SyncToHosts --serial ""
+
+    # Comma-separated host list: the prefix before the comma must be preserved.
+    local comma_out
+    comma_out=$(run_completion _SyncToHosts SyncToHosts --hosts "localhost,")
+    assert_contains "$comma_out" "localhost," "SyncToHosts --hosts localhost, keeps comma prefix"
+    assert_not_contains "$comma_out" "-h --help" "SyncToHosts --hosts localhost, does not complete options"
+
+    comma_out=$(run_completion _SyncToHosts SyncToHosts --hosts "localhost,Hy")
+    assert_contains "$comma_out" "localhost,Hy" "SyncToHosts --hosts localhost,Hy keeps comma prefix"
 }

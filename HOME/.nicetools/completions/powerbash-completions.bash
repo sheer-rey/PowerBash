@@ -171,7 +171,22 @@ _SyncToHosts() {
 
     case "${prev}" in
         --hosts)
-            COMPREPLY=( $(compgen -W "$(_powerbash_ssh_hosts)" -- "${cur}") )
+            # Support comma-separated host lists: when the current word contains
+            # a comma, complete the part after the last comma and keep the prefix.
+            local prefix=""
+            local suffix="${cur}"
+            if [[ "${cur}" == *","* ]]; then
+                prefix="${cur%,*},"
+                suffix="${cur##*,}"
+            fi
+            COMPREPLY=( $(compgen -W "$(_powerbash_ssh_hosts)" -- "${suffix}" | sed "s/^/${prefix}/") )
+            return 0
+            ;;
+        *","*)
+            # Cursor is right after a comma in a host list (e.g. "localhost,").
+            # Complete the next host and keep the comma-separated prefix.
+            local prefix="${prev%,*},"
+            COMPREPLY=( $(compgen -W "$(_powerbash_ssh_hosts)" -- "${cur}" | sed "s/^/${prefix}/") )
             return 0
             ;;
         -c|--config)
