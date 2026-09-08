@@ -117,6 +117,91 @@ to be yank, default value is 74994.
     echo -ne "${osc52_prefix}$(echo "$text" | base64 | tr -d '\r\n')${osc52_suffix}"
 }
 
+# recursively change the owner and group of one or more directories to the
+# current user, using sudo when necessary. If no directory is given, the
+# user's home directory is used.
+function fix_owner {
+    local user="$(id -un)"
+    local group="$(id -gn)"
+    local sudo_cmd=""
+    local deref="--dereference"
+    local help_msg=$(cat <<!
+Usage: fix_owner [OPTION] [DIRECTORY] ...
+
+Recursively change the owner and group of each DIRECTORY to the current user,
+using sudo when necessary. If no DIRECTORY is given, the user's home
+directory is used.
+
+Options:
+    --dereference      Change the target of symbolic links (default).
+    --no-dereference   Change the symbolic link itself, not its target.
+
+    -h, --help         Show this message and exit.
+!
+)
+
+    # parse options
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -h|--help)
+                echo "$help_msg"
+                return 0
+                ;;
+            --dereference)
+                deref="--dereference"
+                shift
+                ;;
+            --no-dereference)
+                deref="--no-dereference"
+                shift
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -*)
+                echo "fix_owner: unknown option '$1'!" >&2
+                return 1
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+
+    # if not running as root, use sudo to gain the required privileges
+    if [ "$(id -u)" -ne 0 ]; then
+        if command -v sudo >/dev/null 2>&1; then
+            sudo_cmd="sudo"
+        else
+            echo "fix_owner: sudo is required but not available!" >&2
+            return 1
+        fi
+    fi
+
+    # if no directory is given, default to the user's home directory
+    if [ $# -eq 0 ]; then
+        set -- "${HOME}"
+    fi
+
+    # iterate over all target directories
+    local target_dir=
+    local ret=0
+    for target_dir in "$@"; do
+        # check the target directory exists
+        if [ ! -d "${target_dir}" ]; then
+            echo "fix_owner: directory '${target_dir}' does not exist!" >&2
+            ret=1
+            continue
+        fi
+
+        # recursively change the owner and group of the target directory
+        ${sudo_cmd} chown -R "${deref}" "${user}:${group}" -- "${target_dir}" || ret=1
+    done
+
+    return ${ret}
+}
+
 # main body
 
 # If not running interactively, don't do anything
@@ -256,6 +341,7 @@ export PATH=${HOME}/.nicetools/bin${PATH:+:${PATH}}
 
 # export functions or variables
 export -f osc_yank
+export -f fix_owner
 export VISUAL=vim
 export EDITOR=vim
 
