@@ -157,19 +157,30 @@ function log_trace { [[ $VERBOSE_LEVEL -ge 3 ]] && PrintDebug "[TRACE] $*"; }
 # Print a per-host status line. When the 4th arg is "full", a multi-line
 # separator block is printed (used with --show-output to visually separate
 # each host's transfer output). Otherwise a single compact line is printed.
+# The status tag is colorized for readability.
 function output_separator {
     local host="$1"
     local tag="$2"
     local msg="$3"
     local full="${4:-false}"
 
+    # Map the status tag to a color.
+    local color="$font_reset"
+    case "$tag" in
+        OK)      color="$font_green" ;;
+        SKIP)    color="$font_yellow" ;;
+        FAIL)    color="$font_red" ;;
+        DRY-RUN) color="$font_cyan" ;;
+        SYNC)    color="$font_blue" ;;
+    esac
+
     if [[ "$full" == "true" ]]; then
         echo ""
-        echo "========================================"
-        echo "[${tag}] ${host} - ${msg}"
-        echo "========================================"
+        echo "${font_bold}========================================${font_reset}"
+        echo "${color}[${tag}] ${host} - ${msg}${font_reset}"
+        echo "${font_bold}========================================${font_reset}"
     else
-        echo "[${tag}] ${host} - ${msg}"
+        echo "${color}[${tag}] ${host} - ${msg}${font_reset}"
     fi
 }
 
@@ -605,7 +616,7 @@ function do_sync {
     # --- Execute ---
     if [[ "$DRY_RUN" == "true" ]]; then
         output_separator "$host" "DRY-RUN" "Would sync" "$SHOW_OUTPUT"
-        echo "  Command: ${sync_cmd[*]}"
+        echo "  ${font_cyan}Command:${font_reset} ${sync_cmd[*]}"
         return 0
     fi
 
@@ -797,9 +808,9 @@ function print_summary {
     local total="$1"
 
     echo ""
-    echo "========================================"
-    echo "Sync Summary"
-    echo "========================================"
+    echo "${font_bold}========================================${font_reset}"
+    echo "${font_bold}Sync Summary${font_reset}"
+    echo "${font_bold}========================================${font_reset}"
 
     # Per-host status lines are already printed live during the sync, so the
     # summary only reports the aggregate counts.
