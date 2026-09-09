@@ -176,11 +176,11 @@ function output_separator {
 
     if [[ "$full" == "true" ]]; then
         echo ""
-        echo "${font_bold}========================================${font_reset}"
-        echo "${color}[${tag}] ${host} - ${msg}${font_reset}"
-        echo "${font_bold}========================================${font_reset}"
+        echo -e "${font_bold}========================================${font_reset}"
+        echo -e "${color}[${tag}] ${host} - ${msg}${font_reset}"
+        echo -e "${font_bold}========================================${font_reset}"
     else
-        echo "${color}[${tag}] ${host} - ${msg}${font_reset}"
+        echo -e "${color}[${tag}] ${host} - ${msg}${font_reset}"
     fi
 }
 
@@ -616,7 +616,7 @@ function do_sync {
     # --- Execute ---
     if [[ "$DRY_RUN" == "true" ]]; then
         output_separator "$host" "DRY-RUN" "Would sync" "$SHOW_OUTPUT"
-        echo "  ${font_cyan}Command:${font_reset} ${sync_cmd[*]}"
+        echo -e "  ${font_cyan}Command:${font_reset} ${sync_cmd[*]}"
         return 0
     fi
 
@@ -807,11 +807,6 @@ function validate_args {
 function print_summary {
     local total="$1"
 
-    echo ""
-    echo "${font_bold}========================================${font_reset}"
-    echo "${font_bold}Sync Summary${font_reset}"
-    echo "${font_bold}========================================${font_reset}"
-
     # Per-host status lines are already printed live during the sync, so the
     # summary only reports the aggregate counts.
     local count_ok=0 count_skip=0 count_fail=0
@@ -826,7 +821,7 @@ function print_summary {
     done
 
     echo ""
-    PrintInfo "Total: $total  OK: $count_ok  SKIP: $count_skip  FAIL: $count_fail"
+    PrintInfo "${font_bold}Sync Summary:${font_reset}  ${font_cyan}Total: ${total}${font_reset}  ${font_green}OK: ${count_ok}${font_reset}  ${font_yellow}SKIP: ${count_skip}${font_reset}  ${font_red}FAIL: ${count_fail}${font_reset}"
 }
 
 # ============================================================================
