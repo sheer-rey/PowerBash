@@ -124,7 +124,7 @@ function fix_owner {
     local user="$(id -un)"
     local group="$(id -gn)"
     local sudo_cmd=""
-    local deref="-L"   # -R -L: follow symlinks and change their targets (default)
+    local -a deref=("--no-dereference")   # default: change the symlink itself, not its target
     local help_msg=$(cat <<!
 Usage: fix_owner [OPTION] [DIRECTORY] ...
 
@@ -133,8 +133,8 @@ using sudo when necessary. If no DIRECTORY is given, the user's home
 directory is used.
 
 Options:
-    --dereference      Change the target of symbolic links (default).
-    --no-dereference   Change the symbolic link itself, not its target.
+    --dereference      Follow symlinks and change the target they point to.
+    --no-dereference   Change the symbolic link itself, not its target (default).
 
     -h, --help         Show this message and exit.
 !
@@ -148,11 +148,11 @@ Options:
                 return 0
                 ;;
             --dereference)
-                deref="-L"
+                deref=("-L" "--dereference")
                 shift
                 ;;
             --no-dereference)
-                deref="-h"
+                deref=("--no-dereference")
                 shift
                 ;;
             --)
@@ -196,7 +196,7 @@ Options:
         fi
 
         # recursively change the owner and group of the target directory
-        ${sudo_cmd} chown -R "${deref}" "${user}:${group}" -- "${target_dir}" || ret=1
+        ${sudo_cmd} chown -R "${deref[@]}" "${user}:${group}" -- "${target_dir}" || ret=1
     done
 
     return ${ret}
