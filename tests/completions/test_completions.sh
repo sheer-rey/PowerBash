@@ -86,4 +86,9 @@ run_tests() {
 
     comma_out=$(run_completion _SyncToHosts SyncToHosts --hosts "localhost,Hy")
     assert_contains "$comma_out" "localhost,Hy" "SyncToHosts --hosts localhost,Hy keeps comma prefix"
+
+    # A complete host list (contains a comma but the last part is a full host)
+    # should not offer any completion, so the current word is left untouched.
+    comma_out=$(run_completion _SyncToHosts SyncToHosts --hosts "localhost,github.com")
+    assert_eq "$comma_out" "" "SyncToHosts complete host list offers no completion"
 }

@@ -179,15 +179,27 @@ _SyncToHosts() {
                 prefix="${cur%,*},"
                 suffix="${cur##*,}"
             fi
+            # If the part after the last comma is already a complete host name,
+            # the host list is finished. Do not offer any completion so the
+            # current word (the host list) is left untouched.
+            if [[ -n "${suffix}" ]] && grep -qxF "${suffix}" < <(_powerbash_ssh_hosts); then
+                COMPREPLY=()
+                return 0
+            fi
             COMPREPLY=( $(compgen -W "$(_powerbash_ssh_hosts)" -- "${suffix}" | sed "s/^/${prefix}/") )
             return 0
             ;;
         *","*)
             # Cursor is right after a comma in a host list (e.g. "localhost,").
-            # Complete the next host and keep the comma-separated prefix.
-            local prefix="${prev%,*},"
-            COMPREPLY=( $(compgen -W "$(_powerbash_ssh_hosts)" -- "${cur}" | sed "s/^/${prefix}/") )
-            return 0
+            # Only trigger when the previous word ends with a comma, i.e. the
+            # user is about to type the next host. If the host list is complete
+            # (contains a comma but does not end with one), fall through to
+            # complete command-line options instead.
+            if [[ "${prev}" == *"," ]]; then
+                local prefix="${prev%,*},"
+                COMPREPLY=( $(compgen -W "$(_powerbash_ssh_hosts)" -- "${cur}" | sed "s/^/${prefix}/") )
+                return 0
+            fi
             ;;
         -c|--config)
             COMPREPLY=( $(compgen -f -- "${cur}") )
