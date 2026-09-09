@@ -124,7 +124,7 @@ function fix_owner {
     local user="$(id -un)"
     local group="$(id -gn)"
     local sudo_cmd=""
-    local deref="--dereference"
+    local deref="-L"   # -R -L: follow symlinks and change their targets (default)
     local help_msg=$(cat <<!
 Usage: fix_owner [OPTION] [DIRECTORY] ...
 
@@ -148,11 +148,11 @@ Options:
                 return 0
                 ;;
             --dereference)
-                deref="--dereference"
+                deref="-L"
                 shift
                 ;;
             --no-dereference)
-                deref="--no-dereference"
+                deref="-h"
                 shift
                 ;;
             --)
