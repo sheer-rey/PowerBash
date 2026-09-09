@@ -66,6 +66,9 @@ declare -A JOB_PIDS=()
 declare -A JOB_TMPFILES=()
 declare -A JOB_EXIT_CODES=()
 
+# Signal handling
+INTERRUPTED=false
+
 # ============================================================================
 # Help
 # ============================================================================
@@ -458,6 +461,41 @@ function wait_all_jobs {
     done
 }
 
+## Clean up on an interrupt signal (SIGINT/SIGTERM/etc.).
+##
+## Terminates any running background sync jobs and removes their temp files so
+## no orphan rsync/ssh processes or leftover files are left behind. The
+## INTERRUPTED flag prevents re-entrancy if multiple signals arrive.
+function cleanup_on_interrupt {
+    # Guard against re-entrancy (e.g. a second Ctrl+C while cleaning up).
+    if [[ "$INTERRUPTED" == "true" ]]; then
+        exit 130
+    fi
+    INTERRUPTED=true
+
+    echo ""
+    PrintWarning "Interrupted! Cleaning up..."
+
+    # Terminate all running background jobs. Each job is a subshell that may
+    # have spawned its own children (e.g. rsync -> ssh), so kill the whole
+    # process tree: first the children, then the subshell itself.
+    for host in "${!JOB_PIDS[@]}"; do
+        local pid="${JOB_PIDS[$host]}"
+        pkill -P "$pid" 2>/dev/null
+        kill "$pid" 2>/dev/null
+        wait "$pid" 2>/dev/null
+        unset "JOB_PIDS[$host]"
+    done
+
+    # Remove any leftover temp files.
+    for host in "${!JOB_TMPFILES[@]}"; do
+        rm -f "${JOB_TMPFILES[$host]}" 2>/dev/null
+        unset "JOB_TMPFILES[$host]"
+    done
+
+    exit 130
+}
+
 # ============================================================================
 # Sync engines
 # ============================================================================
@@ -785,6 +823,11 @@ function print_summary {
 # ============================================================================
 
 function main {
+    # --- Signal handling ---
+    # Trap common interrupt/termination signals so background sync jobs and
+    # temp files are cleaned up instead of leaving orphan processes behind.
+    trap cleanup_on_interrupt INT TERM HUP QUIT
+
     # --- Parse & validate ---
     parse_args "$@"
     validate_args || exit 1
