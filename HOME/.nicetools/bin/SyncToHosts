@@ -151,15 +151,23 @@ function log_info  { [[ $VERBOSE_LEVEL -ge 1 ]] && PrintInfo "$*"; }
 function log_debug { [[ $VERBOSE_LEVEL -ge 2 ]] && PrintDebug "$*"; }
 function log_trace { [[ $VERBOSE_LEVEL -ge 3 ]] && PrintDebug "[TRACE] $*"; }
 
-# Print a visual separator for per-host output
+# Print a per-host status line. When the 4th arg is "full", a multi-line
+# separator block is printed (used with --show-output to visually separate
+# each host's transfer output). Otherwise a single compact line is printed.
 function output_separator {
     local host="$1"
     local tag="$2"
     local msg="$3"
-    echo ""
-    echo "========================================"
-    echo "[${tag}] ${host} - ${msg}"
-    echo "========================================"
+    local full="${4:-false}"
+
+    if [[ "$full" == "true" ]]; then
+        echo ""
+        echo "========================================"
+        echo "[${tag}] ${host} - ${msg}"
+        echo "========================================"
+    else
+        echo "[${tag}] ${host} - ${msg}"
+    fi
 }
 
 # ============================================================================
@@ -401,19 +409,25 @@ function launch_sync_job {
 
     wait_for_slot "$(get_concurrent_jobs)"
 
-    local tmpfile
-    tmpfile=$(mktemp "/tmp/sync_${host//\//_}_XXXXXX.log")
+    # The detail file holds the per-host transfer output for delayed replay
+    # when --show-output is enabled. The status lines are printed live to
+    # stdout (the subshell is NOT redirected), so the user sees progress as
+    # each host finishes instead of waiting for all jobs to complete.
+    local detail_file
+    detail_file=$(mktemp "/tmp/sync_${host//\//_}_XXXXXX.log")
 
-    log_debug "Launching sync job for $host (log: $tmpfile)"
+    log_debug "Launching sync job for $host (detail: $detail_file)"
 
-    # Fork a subshell that inherits all functions and variables
+    # Fork a subshell that inherits all functions and variables. The status
+    # lines go straight to stdout; the transfer output is captured by do_sync
+    # and appended to the detail file for later replay.
     (
-        do_sync "$host"
-    ) > "$tmpfile" 2>&1 &
+        do_sync "$host" "$detail_file"
+    ) &
 
     local pid=$!
     JOB_PIDS["$host"]=$pid
-    JOB_TMPFILES["$host"]=$tmpfile
+    JOB_TMPFILES["$host"]=$detail_file
 
     log_debug "Job started: $host -> PID $pid"
 }
@@ -430,14 +444,16 @@ function wait_all_jobs {
         unset "JOB_PIDS[$host]"
     done
 
-    # Print per-host output in host-list order, then clean up.
-    # The job tmpfile always contains the per-host separators/status; the
-    # rsync transfer output inside is already gated by --show-output in do_sync.
+    # Replay each host's transfer output in host-list order, then clean up.
+    # The status lines were already printed live, so only the captured
+    # transfer output is replayed — and only when --show-output is enabled.
     for host in "${HOST_LIST[@]}"; do
-        local tmpfile="${JOB_TMPFILES[$host]:-}"
-        if [[ -n "$tmpfile" && -f "$tmpfile" ]]; then
-            cat "$tmpfile"
-            rm -f "$tmpfile"
+        local detail_file="${JOB_TMPFILES[$host]:-}"
+        if [[ -n "$detail_file" && -f "$detail_file" ]]; then
+            if [[ "$SHOW_OUTPUT" == "true" ]]; then
+                cat "$detail_file"
+            fi
+            rm -f "$detail_file"
         fi
     done
 }
@@ -521,10 +537,14 @@ function test_host_connection {
 ## Return: 0 = success, 1 = unreachable, 2 = sync failed.
 function do_sync {
     local host="$1"
+    # Optional detail file for delayed replay of the transfer output. In
+    # parallel mode this is supplied by launch_sync_job; in serial mode it is
+    # empty and the output is replayed inline.
+    local detail_file="${2:-}"
 
     # --- Connection test ---
     if ! test_host_connection "$host"; then
-        output_separator "$host" "SKIP" "Unreachable"
+        output_separator "$host" "SKIP" "Unreachable" "$SHOW_OUTPUT"
         return 1
     fi
 
@@ -546,32 +566,43 @@ function do_sync {
 
     # --- Execute ---
     if [[ "$DRY_RUN" == "true" ]]; then
-        output_separator "$host" "DRY-RUN" "Would sync"
+        output_separator "$host" "DRY-RUN" "Would sync" "$SHOW_OUTPUT"
         echo "  Command: ${sync_cmd[*]}"
         return 0
     fi
 
-    output_separator "$host" "SYNC" "Starting"
+    # The "Starting" marker is only useful when the transfer output is shown,
+    # so it is hidden by default to keep the output compact.
+    if [[ "$SHOW_OUTPUT" == "true" ]]; then
+        output_separator "$host" "SYNC" "Starting" "true"
+    fi
 
     # Capture the transfer output so it can be suppressed by default and only
-    # replayed when --show-output is enabled. This keeps serial and parallel
-    # modes consistent.
+    # replayed when --show-output is enabled. In parallel mode the output is
+    # appended to the shared detail file for delayed replay; in serial mode it
+    # is replayed inline.
     local sync_output
-    sync_output=$(mktemp "/tmp/sync_out_${host//\//_}_XXXXXX.log")
+    if [[ -n "$detail_file" ]]; then
+        sync_output="$detail_file"
+    else
+        sync_output=$(mktemp "/tmp/sync_out_${host//\//_}_XXXXXX.log")
+    fi
 
     local rc
     if "${sync_cmd[@]}" > "$sync_output" 2>&1; then
-        output_separator "$host" "OK" "Succeeded"
+        output_separator "$host" "OK" "Succeeded" "$SHOW_OUTPUT"
         rc=0
     else
-        output_separator "$host" "FAIL" "Sync error (exit code: $?)"
+        output_separator "$host" "FAIL" "Sync error (exit code: $?)" "$SHOW_OUTPUT"
         rc=2
     fi
 
-    if [[ "$SHOW_OUTPUT" == "true" ]]; then
+    if [[ "$SHOW_OUTPUT" == "true" && -z "$detail_file" ]]; then
         cat "$sync_output"
     fi
-    rm -f "$sync_output"
+    if [[ -z "$detail_file" ]]; then
+        rm -f "$sync_output"
+    fi
 
     return $rc
 }
@@ -732,14 +763,16 @@ function print_summary {
     echo "Sync Summary"
     echo "========================================"
 
+    # Per-host status lines are already printed live during the sync, so the
+    # summary only reports the aggregate counts.
     local count_ok=0 count_skip=0 count_fail=0
     for host in "${HOST_LIST[@]}"; do
         local status="${SYNC_RESULTS[$host]:-UNKNOWN}"
         case "$status" in
-            OK)   ((count_ok++));   PrintInfo    "[OK]   $host" ;;
-            SKIP) ((count_skip++)); PrintWarning "[SKIP] $host" ;;
-            FAIL) ((count_fail++)); PrintError   "[FAIL] $host" ;;
-            *)    ((count_fail++)); PrintError   "[?]    $host ($status)" ;;
+            OK)   ((count_ok++)) ;;
+            SKIP) ((count_skip++)) ;;
+            FAIL) ((count_fail++)) ;;
+            *)    ((count_fail++)) ;;
         esac
     done
 
