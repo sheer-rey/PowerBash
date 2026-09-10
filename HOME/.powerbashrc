@@ -340,10 +340,6 @@ if \bat --version &> /dev/null || \batcat --version &> /dev/null; then
     unset BAT_EXEC
 fi
 
-# export additional elements in PATH
-export PATH=$(echo ${PATH} | sed 's/:$//; s/^://;')
-export PATH=${HOME}/.nicetools/bin${PATH:+:${PATH}}
-
 # export functions or variables
 export -f osc_yank
 export -f fix_owner
