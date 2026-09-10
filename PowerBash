@@ -106,9 +106,11 @@ Options:
   -h, --help                Print this help message and exit.
 
 Environment Variables:
-  POWERBASH_ADD_BIN_PATH    If set to 1, the script will add the specified path to
-                            the PATH environment variable. This is useful for adding
-                            custom binary directories to your shell's PATH.
+  POWERBASH_ADD_BIN_PATH    If set to 1 (default), the script will add the
+                            nicetools bin path to the PATH environment variable.
+                            Set to 0 to disable this behavior. This is useful
+                            for adding custom binary directories to your shell's
+                            PATH.
 !
 }
 
@@ -133,9 +135,11 @@ Options:
   -h            Print this help message and exit.
 
 Environment Variables:
-  POWERBASH_ADD_BIN_PATH    If set to 1, the script will add the specified path to
-                            the PATH environment variable. This is useful for adding
-                            custom binary directories to your shell's PATH.
+  POWERBASH_ADD_BIN_PATH    If set to 1 (default), the script will add the
+                            nicetools bin path to the PATH environment variable.
+                            Set to 0 to disable this behavior. This is useful
+                            for adding custom binary directories to your shell's
+                            PATH.
 !
 }
 
@@ -411,7 +415,9 @@ function DoInstall {
         if [ -n "$bin_dir" ]; then
             for bin_path in $bin_dir; do
                 chmod -R +x "$bin_path"
-                if [[ -n "${POWERBASH_ADD_BIN_PATH:-}" && "$POWERBASH_ADD_BIN_PATH" == "1" ]]; then
+                # Add the bin directory to PATH by default. Set
+                # POWERBASH_ADD_BIN_PATH=0 to disable this behavior.
+                if [[ "${POWERBASH_ADD_BIN_PATH:-1}" == "1" ]]; then
                     if [ $strip_path -eq 0 ]; then
                         PrintInfo "${font_magenta}%s${font_reset}" \
                                   "Stripping extra prefix/suffix for PATH environment variable ..."
