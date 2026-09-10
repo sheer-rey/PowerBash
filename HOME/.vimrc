@@ -96,6 +96,10 @@ if has('patch-7.4.775')
 else
     set completeopt=menu,menuone,preview
 endif
+"" set keyword completion sources. Exclude 't' (tags) to avoid the slow
+"" 'Scanning tags' triggered by vim-auto-popmenu in large projects.
+"" OmniCppComplete provides smarter C/C++ completion via omnifunc instead.
+set complete=.,w,b,u,i
 "" vim built-in settings for character encoding
 set encoding=utf-8              " set encoding for vim internal use
 setglobal fileencoding=utf-8    " set global encoding for new file
