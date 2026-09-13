@@ -1,8 +1,35 @@
-.vscode/
+# ------------------------------------------------------------------
+# Global / user-level gitignore (applies to every repository)
+#
+# In gitignore a trailing "# ..." is literal text, NOT a comment (only a
+# "#" at the start of a line is). So pattern lines below carry no
+# trailing text; explanations live on their own comment lines.
+# ------------------------------------------------------------------
+
+# ------------------------------------------------------------------
+# Visual Studio Code (VS Code)
+#
+# Track only the two shared debug/config files; ignore everything else
+# under .vscode/. Note `.vscode/*` (NOT `.vscode/`): ignoring the whole
+# directory with a trailing slash would block the `!` negations below
+# from re-including files inside it.
+#
+# This global exemption applies to every repo on this machine.
+# ------------------------------------------------------------------
+.vscode/*
+!/.vscode/launch.json
+!/.vscode/root-lldb-dap
+
+# ------------------------------------------------------------------
+# Build / cache / install artifacts (generated)
+# ------------------------------------------------------------------
 .cache/
 build/
 install/
 
+# ------------------------------------------------------------------
+# Code index files (ctags / cscope / GNU global)
+# ------------------------------------------------------------------
 tags
 cscope.out
 cscope.in.out
@@ -10,4 +37,3 @@ cscope.po.out
 GTAGS
 GRTAGS
 GPATH
-
