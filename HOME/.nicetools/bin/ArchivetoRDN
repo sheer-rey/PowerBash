@@ -179,7 +179,7 @@ PrintInfo "Information file generated to $(realpath "${info_file}")"
 # transfer files to RDN via SFTP if transfer option is set
 if [ "$transfer" == true ]; then
     PrintInfo "Start to transfer files to RDN..."
-    sftp -b - "hygon\\${sftp_user}@${sftp_host}" <<< "${sftp_batch}"
+    sftp -b - "${sftp_user}@${sftp_host}" <<< "${sftp_batch}"
     PrintInfo "Files transferred to RDN successfully."
 fi
 
