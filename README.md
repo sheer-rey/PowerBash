@@ -54,8 +54,15 @@ for convenience, clarity, and efficiency.
 
 - **User-level `.tmux.conf`:**  
   - Enables mouse support, sets a modern status line, and configures useful key bindings.
-  - Ensures compatibility with various tmux versions.
   - Sets up history limits, color schemes, and other usability tweaks.
+- **Width-Adaptive System Metrics Status Bar** (requires tmux >= 3.3):  
+  - A `/proc`-based helper (`~/.tmux/status-metrics.sh`) renders CPU (bar + percent), MEM, DISK,
+    1-minute load, uptime, and date/time in the status line, refreshed every second at negligible cost.
+  - Three layout tiers (wide/mid/narrow) are picked automatically from the client width; narrowing
+    drops bars and auxiliary values, never the emoji segment icons (an empty icon knob hides the
+    icon and its space).
+  - Values are tinted green/orange/red by severity; the severity/segment colours, the icons, and a
+    demo mode are plain variables at the top of the script.
 
 ### 📝 Advanced Vim Environment
 
@@ -373,7 +380,8 @@ This will remove the installed configuration files from your `$HOME` directory.
 
 In order to make PowerBash works properly, ensure you have the following tools installed:
 - `git`
-- `tmux` (almost versions is compatible, but 3.4 and above recommended)
+- `tmux` (3.3 or above **required** — the status bar format uses the `e|` arithmetic operator
+  (tmux 3.2) and `allow-passthrough` (tmux 3.3); 3.4 and above recommended)
 - `vim` (almost versions is compatible, but 8.1 and above recommended)
 - `nvim` (for the Neovim configuration)
 - `python2/3` (for various Vim plugins)
@@ -395,11 +403,18 @@ With Ubuntu22.04 or later, you can install these tools using:
 sudo apt install -y git tmux vim neovim python3 bat ack silversearcher-ag universal-ctags cscope global ripgrep cppman clangd clang-format
 ```
 
+> **tmux version note:** Ubuntu 22.04 ships tmux 3.2a via apt, which is older than the required
+> 3.3 — use Ubuntu 24.04 or later (tmux 3.4), or install a newer tmux (e.g. from a PPA or built
+> from source). On tmux < 3.3, sourcing this config reports `unknown option: allow-passthrough`
+> and the metrics status bar does not render.
+
 
 ## Customization
 
 - You can further customize any configuration file in your `HOME/` directory.
 - You can further add your own aliases to `~/.bash_aliases`.
+- You can further tune the tmux status bar (severity/segment colours, segment emoji icons, demo
+  mode) via the knobs at the top of `HOME/.tmux/status-metrics.sh`.
 - You can further extend Vim with more plugins by adding them to `HOME/.vim/bundle/`.
 - You can further extend Neovim with more plugins by adding them to `HOME/.config/nvim/lua/plugins/`.
 - You can further extend bash completion by adding functions to `HOME/.nicetools/completions/powerbash-completions.bash`.

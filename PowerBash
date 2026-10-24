@@ -51,6 +51,7 @@ files=(
 )
 dirs=(
     ".vim"
+    ".tmux"
     ".config/clangd"
     ".config/nvim"
     ".nicetools"
