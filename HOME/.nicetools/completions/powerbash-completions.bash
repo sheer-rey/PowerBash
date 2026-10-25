@@ -84,9 +84,9 @@ _fix_owner() {
 complete -F _fix_owner fix_owner
 
 # ============================================================================
-# ArchivetoRDN
+# ArchiveToRDN
 # ============================================================================
-_ArchivetoRDN() {
+_ArchiveToRDN() {
     local cur prev
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
@@ -118,7 +118,7 @@ _ArchivetoRDN() {
     COMPREPLY=( $(compgen -f -- "${cur}") )
     return 0
 }
-complete -F _ArchivetoRDN ArchivetoRDN
+complete -F _ArchiveToRDN ArchiveToRDN
 
 # ============================================================================
 # CreateSSHTunnel

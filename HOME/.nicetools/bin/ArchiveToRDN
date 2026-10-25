@@ -1,11 +1,11 @@
 #!/bin/bash
 ####################################################################################################
- # @file    ArchivetoRDN
- # @brief   Archive files and transfer to RDN via SFTP.
- #
- # @author  sheer.rey<sheer.rey@gmail.cn>
- # @date    06/26/2025
- # @version 1.1
+# @file    ArchiveToRDN
+# @brief   Archive files and transfer to RDN via SFTP.
+#
+# @author  sheer.rey<sheer.rey@gmail.com>
+# @date    06/26/2025
+# @version 1.1
 ####################################################################################################
 script_root="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
@@ -43,45 +43,21 @@ delete_sources=false # whether to delete source files along with archive and inf
 # Function to print help message
 function PrintHelp {
     cat <<EOF
-Used for archive files and to transfer to RDN.
 Usage: $(basename "${BASH_SOURCE[0]}") [OPTIONS] <FILE1> [FILE2] ...
 
-Options:
-  -H, --host <HOST>     Specify the SFTP server host. Default is ${sftp_host}.
-  -U, --user <USER>     Specify the SFTP user. Default is ${sftp_user}.
+Archive files and transfer them to RDN via SFTP.
 
-  -C, --directory <DIR> Change to directory DIR before performing any operations.
-                        Default is current directory.
+OPTIONS:
+  General:
+    -H, --host <HOST>        Specify the SFTP server host (default: ${sftp_host})
+    -U, --user <USER>        Specify the SFTP user (default: ${sftp_user})
+    -C, --directory <DIR>    Change to DIR before operations (default: current directory)
+    -h, --help               Print this help message and exit
 
-  -t, --transfer        Transfer the archive file to RDN via SFTP immediately,
-                        ssh pubkey authentication of remote server is required.
-                        If not specified, the script will only archive files.
-  -d, --delete          Delete the archive and ${info_file} info files after transfer.
-  -D, --delete-all      Delete source files along with archive and info files after transfer.
-
-  -h, --help            Print this help message and exit.
-EOF
-}
-
-function PrintHelpCompatible {
-    cat <<EOF
-Used for archive files and to transfer to RDN.
-Usage: $(basename "${BASH_SOURCE[0]}") [OPTIONS] <FILE1> [FILE2] ...
-
-Options:
-  -H <HOST>     Specify the SFTP server host. Default is ${sftp_host}.
-  -U <USER>     Specify the SFTP user. Default is ${sftp_user}.
-
-  -C <DIR>      Change to directory DIR before performing any operations.
-                Default is current directory.
-
-  -t            Transfer the archive file to RDN via SFTP immediately,
-                ssh pubkey authentication of remote server is required.
-                If not specified, the script will only archive files.
-  -d            Delete the archive and ${info_file} info files after transfer.
-  -D            Delete source files along with archive and info files after transfer.
-
-  -h            Print this help message and exit.
+  Transfer and cleanup:
+    -t, --transfer           Transfer archive to RDN via SFTP immediately (ssh pubkey required)
+    -d, --delete             Delete archive and ${info_file} info files after transfer
+    -D, --delete-all         Delete source files along with archive and info files
 EOF
 }
 
@@ -121,14 +97,7 @@ while true; do
             shift
             ;;
         -h|--help)
-            if [ $getopt_version = "enhanced" ]; then
-                PrintHelp
-            elif [ $getopt_version = "compatible" ]; then
-                PrintHelpCompatible
-            else
-                PrintError "unrecognized getopt version string($getopt_version)!"
-                exit 1
-            fi
+            PrintHelp
             exit 0
             ;;
         --)

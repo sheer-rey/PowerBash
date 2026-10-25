@@ -26,36 +26,20 @@ fi
 # Function to print help message
 function PrintHelp {
     cat <<EOF
-Used for opening files, paths or URLs with the Windows Microsoft Edge browser from WSL.
 Usage: $(basename "${BASH_SOURCE[0]}") [OPTIONS] [FILE|PATH|URL] ...
 
-Options:
-  -h, --help            Print this help message and exit.
-      --dry-run         Print the resolved launch command without opening Edge.
+Open files, paths or URLs with the Windows Microsoft Edge browser from WSL.
+This tool only works inside a WSL environment.
 
-Arguments:
-  FILE|PATH|URL         WSL paths, Windows paths, file:// URIs and http(s) URLs are accepted,
-                        local paths are checked for existence before opening.
-                        With no arguments specified, the Edge start page is opened.
+OPTIONS:
+  General:
+    -h, --help               Print this help message and exit
+        --dry-run            Print the resolved launch command without opening Edge
 
-Note: This tool only works inside a WSL environment.
-EOF
-}
-
-function PrintHelpCompatible {
-    cat <<EOF
-Used for opening files, paths or URLs with the Windows Microsoft Edge browser from WSL.
-Usage: $(basename "${BASH_SOURCE[0]}") [OPTIONS] [FILE|PATH|URL] ...
-
-Options:
-  -h                Print this help message and exit.
-
-Arguments:
-  FILE|PATH|URL     WSL paths, Windows paths, file:// URIs and http(s) URLs are accepted,
-                    local paths are checked for existence before opening.
-                    With no arguments specified, the Edge start page is opened.
-
-Note: This tool only works inside a WSL environment.
+  Arguments:
+    [FILE|PATH|URL]          WSL paths, Windows paths, file:// URIs and http(s) URLs,
+                             local paths are checked for existence before opening.
+                             With no arguments, the Edge start page is opened
 EOF
 }
 
@@ -73,14 +57,7 @@ eval set -- "$parsed_args"
 while true; do
     case "$1" in
         -h|--help)
-            if [ $getopt_version = "enhanced" ]; then
-                PrintHelp
-            elif [ $getopt_version = "compatible" ]; then
-                PrintHelpCompatible
-            else
-                PrintError "unrecognized getopt version string($getopt_version)!"
-                exit 1
-            fi
+            PrintHelp
             exit 0
             ;;
         --dry-run)

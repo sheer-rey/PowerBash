@@ -35,10 +35,10 @@ run_tests() {
 
     # Verify each command is bound to its completion function
     local bindings
-    bindings=$(source "$COMPLETIONS" && complete -p osc_yank fix_owner ArchivetoRDN CreateSSHTunnel SyncToHosts OpenWithEdge)
+    bindings=$(source "$COMPLETIONS" && complete -p osc_yank fix_owner ArchiveToRDN CreateSSHTunnel SyncToHosts OpenWithEdge)
     assert_contains "$bindings" "complete -F _osc_yank osc_yank" "osc_yank bound"
     assert_contains "$bindings" "complete -F _fix_owner fix_owner" "fix_owner bound"
-    assert_contains "$bindings" "complete -F _ArchivetoRDN ArchivetoRDN" "ArchivetoRDN bound"
+    assert_contains "$bindings" "complete -F _ArchiveToRDN ArchiveToRDN" "ArchiveToRDN bound"
     assert_contains "$bindings" "complete -F _CreateSSHTunnel CreateSSHTunnel" "CreateSSHTunnel bound"
     assert_contains "$bindings" "complete -F _SyncToHosts SyncToHosts" "SyncToHosts bound"
     assert_contains "$bindings" "complete -F _OpenWithEdge OpenWithEdge" "OpenWithEdge bound"
@@ -58,11 +58,11 @@ run_tests() {
     assert_completion _fix_owner "--dereference --no-dereference -h --help" "fix_owner <space> completes options" fix_owner ""
     assert_completion _fix_owner "--dereference --no-dereference -h --help" "fix_owner <space> after flag completes options" fix_owner --no-dereference ""
 
-    print_section_header "ArchivetoRDN"
+    print_section_header "ArchiveToRDN"
 
-    assert_completion _ArchivetoRDN "--host --user --directory --transfer --delete --delete-all --help" "ArchivetoRDN -- completes long options" ArchivetoRDN --
-    assert_completion _ArchivetoRDN "-H --host -U --user -C --directory -t --transfer -d --delete -D --delete-all -h --help" "ArchivetoRDN - completes short options" ArchivetoRDN -
-    assert_completion _ArchivetoRDN "-H --host -U --user -C --directory -t --transfer -d --delete -D --delete-all -h --help" "ArchivetoRDN <space> completes options" ArchivetoRDN ""
+    assert_completion _ArchiveToRDN "--host --user --directory --transfer --delete --delete-all --help" "ArchiveToRDN -- completes long options" ArchiveToRDN --
+    assert_completion _ArchiveToRDN "-H --host -U --user -C --directory -t --transfer -d --delete -D --delete-all -h --help" "ArchiveToRDN - completes short options" ArchiveToRDN -
+    assert_completion _ArchiveToRDN "-H --host -U --user -C --directory -t --transfer -d --delete -D --delete-all -h --help" "ArchiveToRDN <space> completes options" ArchiveToRDN ""
 
     print_section_header "CreateSSHTunnel"
 

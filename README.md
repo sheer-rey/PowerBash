@@ -35,7 +35,7 @@ for convenience, clarity, and efficiency.
   - Enables programmable completion if available.
 - **Bash Completion:**  
   - Provides tab completion for the exported functions (`osc_yank`, `fix_owner`) and nicetools
-    scripts (`ArchivetoRDN`, `CreateSSHTunnel`, `SyncToHosts`, `OpenWithEdge`).
+    scripts (`ArchiveToRDN`, `CreateSSHTunnel`, `SyncToHosts`, `OpenWithEdge`).
   - Completions are loaded automatically from `~/.nicetools/completions/powerbash-completions.bash`.
 
 ### 🛠️ User-Scoped Git Configuration
@@ -138,7 +138,7 @@ for convenience, clarity, and efficiency.
     - Logging functions: `PrintError`, `PrintWarning`, `PrintInfo`, `PrintDebug`.
     - Configurable log level via `SC_LOG_LEVEL` (`quiet`, `error`, `warning`, `info`, `debug`).
 
-- **`ArchivetoRDN`:**  
+- **`ArchiveToRDN`:**  
   - Archive files and transfer them to a remote server via SFTP.
   - Supports custom host/user, working directory, transfer, and cleanup options.
 

@@ -3,7 +3,7 @@
 # @file    CreateSSHTunnel
 # @brief   Create SSH tunnel to remote server with optional jump host.
 #
-# @author  sheer.rey<sheer.rey@gmail.cn>
+# @author  sheer.rey<sheer.rey@gmail.com>
 # @date    06/26/2025
 # @version 1.0
 ####################################################################################################
@@ -38,33 +38,20 @@ lopt='verbose,jump-profile:,jump-user:,jump-host:,port:,help'
 
 # predefined functions
 function PrintHelp {
-    cat <<!
-Usage: $(basename "${BASH_SOURCE[0]}") <remote_ip:port> [options]
+    cat <<EOF
+Usage: $(basename "${BASH_SOURCE[0]}") <remote_ip:port> [OPTIONS]
 
-Options:
-  -v, --verbose                 Enable verbose output of ssh command
-  -p, --port <PORT>             Specify local port for the tunnel
-  -P, --jump-profile <PROFILE>  Use SSH configuration profile predefined in ~/.ssh/config
-  -U, --jump-user <USER>        Specify jump user
-  -H, --jump-host <HOST>        Specify jump host
+Create SSH tunnel to remote server with optional jump host.
 
-  -h, --help                    Print this help message and exit
-!
-}
-
-function PrintHelpCompatible {
-    cat <<!
-Usage: $(basename "${BASH_SOURCE[0]}") <remote_ip:port> [options]
-
-Options:
-  -v            Enable verbose output of ssh command
-  -p <PORT>     Specify local port for the tunnel
-  -P <PROFILE>  Use SSH configuration profile predefined in ~/.ssh/config
-  -U <USER>     Specify jump user
-  -H <HOST>     Specify jump host
-
-  -h            Print this help message and exit
-!
+OPTIONS:
+  General:
+    -v, --verbose                 Enable verbose output of ssh command
+    -p, --port <PORT>             Specify local port for the tunnel
+    -P, --jump-profile <PROFILE>  Use SSH configuration profile predefined in ~/.ssh/config
+    -U, --jump-user <USER>        Specify jump user
+    -H, --jump-host <HOST>        Specify jump host
+    -h, --help                    Print this help message and exit
+EOF
 }
 
 # Sequential port scan
@@ -147,14 +134,7 @@ while true; do
             shift 2
             ;;
         -h|--help)
-            if [ $getopt_version = "enhanced" ]; then
-                PrintHelp
-            elif [ $getopt_version = "compatible" ]; then
-                PrintHelpCompatible
-            else
-                PrintError "unrecognized getopt version string($getopt_version)!"
-                exit 1
-            fi
+            PrintHelp
             exit 0
         ;;
         --)

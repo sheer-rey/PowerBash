@@ -22,7 +22,7 @@ run_tests() {
 
     run_test_case "--help prints Source/Destination options" \
         "$SCRIPT --ssh-timeout 1 -h" \
-        assert_contains "--dst PATH"
+        assert_contains "--dst <PATH>"
 
     run_test_case "--help prints sync engine options" \
         "$SCRIPT --ssh-timeout 1 -h" \

@@ -1,11 +1,11 @@
 #!/bin/bash
 ####################################################################################################
-# @file     SyncToHosts
-# @brief    Universal multi-host file/directory synchronization tool.
+# @file    SyncToHosts
+# @brief   Universal multi-host file/directory synchronization tool.
 #
-# @author   sheer.rey<sheer.rey@gmail.com>
-# @date     07/31/2026
-# @version  2.0
+# @author  sheer.rey<sheer.rey@gmail.com>
+# @date    07/31/2026
+# @version 2.0
 ####################################################################################################
 
 # script root directory
@@ -87,32 +87,32 @@ OPTIONS:
     --show-output            Print per-host transfer output after sync completes
 
   Host selection:
-    --hosts PATTERN          Target host pattern:
+    --hosts <PATTERN>        Target host pattern:
                                - Wildcards match SSH config hosts: --hosts "Hygon-*"
                                - Comma-separated list:             --hosts "host1,host2"
                                - Direct IP or user@host:           --hosts "192.168.1.10"
                                - Mix freely:                       --hosts "Hygon-*,10.0.0.5"
-    -c, --config FILE        Read host list from config file (one pattern per line)
+    -c, --config <FILE>      Read host list from config file (one pattern per line)
     --all                    Sync to ALL hosts defined in SSH config
 
   Source/Destination:
-    -s, --src PATTERN        Source directory pattern (trailing / removed automatically)
-    -f, --file PATTERN       Source file pattern
-    -d, --dst PATH           Destination path on remote host (required)
+    -s, --src <PATTERN>      Source directory pattern (trailing / removed automatically)
+    -f, --file <PATTERN>     Source file pattern
+    -d, --dst <PATH>         Destination path on remote host (required)
 
   Sync engine options:
     --rsync                  Use rsync for sync (default)
     --scp                    Use scp for sync
-    -e, --exclude PATTERN    Exclude pattern (repeatable; rsync only, ignored by scp)
+    -e, --exclude <PATTERN>  Exclude pattern (repeatable; rsync only, ignored by scp)
     --no-default-excludes    Do not apply the default exclude patterns (rsync only)
-    --timeout SECONDS        Sync timeout (default: ${DEFAULT_RSYNC_TIMEOUT})
-    --ssh-timeout SECONDS    SSH connection timeout (default: ${DEFAULT_CONNECT_TIMEOUT})
+    --timeout <SECONDS>      Sync timeout (default: ${DEFAULT_RSYNC_TIMEOUT})
+    --ssh-timeout <SECONDS>  SSH connection timeout (default: ${DEFAULT_CONNECT_TIMEOUT})
 
   Default exclude patterns:
     $(IFS=', '; echo "${DEFAULT_EXCLUDES[*]}")
 
   Concurrency:
-    -j, --jobs N             Max concurrent sync jobs (default: auto-detect)
+    -j, --jobs <N>           Max concurrent sync jobs (default: auto-detect)
 
   Host resolution rules:
     1. IP address or user@host  -->  Use directly (no SSH config lookup)

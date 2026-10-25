@@ -10,7 +10,7 @@ Tests for `HOME/.nicetools/completions/powerbash-completions.bash`.
 
 ## What is tested
 
-- **Bindings:** Each command (`osc_yank`, `fix_owner`, `ArchivetoRDN`, `CreateSSHTunnel`, `SyncToHosts`) is bound to its completion function via `complete -F`.
+- **Bindings:** Each command (`osc_yank`, `fix_owner`, `ArchiveToRDN`, `CreateSSHTunnel`, `SyncToHosts`, `OpenWithEdge`) is bound to its completion function via `complete -F`.
 - **Option completion:** Verifies that typing `--` or `-` produces the correct set of long/short options.
 - **Prefix filtering:** Verifies that `compgen` filters candidates by the current prefix (e.g. `--no` → `--no-dereference`).
 
