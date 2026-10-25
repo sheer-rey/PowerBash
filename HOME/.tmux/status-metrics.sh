@@ -1,6 +1,13 @@
 #!/bin/sh
-# status-metrics.sh - tier-conditional system metrics for the tmux status line.
+####################################################################################################
+# @file     status-metrics.sh
+# @brief    Tier-conditional system metrics helper for the tmux status line.
 #
+# @author   sheer.rey<sheer.rey@gmail.com>
+# @date     10/25/2026
+# @version  0.1.0
+####################################################################################################
+
 # Usage: status-metrics.sh <tier|width> [tmux-server-pid]
 #   tier: w (wide), m (mid), n (narrow). The status-right format in .tmux.conf
 #   buckets the client width into w/m/n inside the command string, so every
@@ -13,14 +20,14 @@
 #
 #   Segments: CPU (6-block bar + percent), MEM (used percent of MemTotal minus
 #   MemAvailable), DISK (usage percent of root filesystem), LOAD (1-minute average),
-#   UP (uptime days/hours), date. I/O wait, docker and users are intentionally omitted.
+#   UP (uptime days/hours), date.
 #
 # Layout per tier (segments are labelled with the icon knobs below; narrowing
 # drops bars and auxiliary values, never the icons; an empty icon prints
 # nothing, space included):
 #   w : icon + bar + percent per metric, load, uptime, full date
 #   m : icon + percent per metric, load, full date
-#   n : compact icon + percent, time only
+#   n : icon + percent, time only
 #
 # Refresh design (paired with status-interval 1): CPU and MEM are sampled on
 # every refresh so they react instantly; DISK and the date string are cached in
@@ -49,8 +56,8 @@ colour_warn=208   # busy:    70-89%, LOAD 0.7-1x cores
 colour_crit=160   # high:    >=90%, LOAD >= 1x cores
 
 # segment colour knobs for the non-metric segments, same 0-255 index space
-colour_up=141      # UP (uptime) value
-colour_date=81     # date / time string
+colour_up=141     # UP (uptime) value
+colour_date=81    # date / time string
 
 # segment icon knobs: colour emoji rendered by the terminal's colour-emoji
 # font; an empty icon hides that segment's icon AND its trailing space (clear
@@ -183,7 +190,7 @@ elif [ "$tier" = m ]; then
     body="$cpu_lbl#[fg=colour$1]$(printf '%d%%' "$cpu")#[default] | $mem_lbl#[fg=colour$2]$(printf '%d%%' "$mem")#[default] | $disk_lbl#[fg=colour$3]$(printf '%d%%' "$disk")#[default] | $load_lbl#[fg=colour$4]$load1#[default] | $date_lbl#[fg=colour$colour_date]$now#[default]"
 else
     hm=${now#* }; hm=${hm#* }; hm=${hm%% *}   # HH:MM: third field of the cached date
-    body="$icon_cpu#[fg=colour$1]$(printf '%d%%' "$cpu")#[default] | $icon_mem#[fg=colour$2]$(printf '%d%%' "$mem")#[default] | $icon_disk#[fg=colour$3]$(printf '%d%%' "$disk")#[default] | $date_lbl#[fg=colour$colour_date]$hm#[default]"
+    body="$cpu_lbl#[fg=colour$1]$(printf '%d%%' "$cpu")#[default] | $mem_lbl#[fg=colour$2]$(printf '%d%%' "$mem")#[default] | $disk_lbl#[fg=colour$3]$(printf '%d%%' "$disk")#[default] | $date_lbl#[fg=colour$colour_date]$hm#[default]"
 fi
 
 printf '%s' "$body"
