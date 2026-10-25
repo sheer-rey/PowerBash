@@ -35,12 +35,13 @@ run_tests() {
 
     # Verify each command is bound to its completion function
     local bindings
-    bindings=$(source "$COMPLETIONS" && complete -p osc_yank fix_owner ArchivetoRDN CreateSSHTunnel SyncToHosts)
+    bindings=$(source "$COMPLETIONS" && complete -p osc_yank fix_owner ArchivetoRDN CreateSSHTunnel SyncToHosts OpenWithEdge)
     assert_contains "$bindings" "complete -F _osc_yank osc_yank" "osc_yank bound"
     assert_contains "$bindings" "complete -F _fix_owner fix_owner" "fix_owner bound"
     assert_contains "$bindings" "complete -F _ArchivetoRDN ArchivetoRDN" "ArchivetoRDN bound"
     assert_contains "$bindings" "complete -F _CreateSSHTunnel CreateSSHTunnel" "CreateSSHTunnel bound"
     assert_contains "$bindings" "complete -F _SyncToHosts SyncToHosts" "SyncToHosts bound"
+    assert_contains "$bindings" "complete -F _OpenWithEdge OpenWithEdge" "OpenWithEdge bound"
 
     print_section_header "osc_yank"
 
@@ -69,6 +70,13 @@ run_tests() {
     assert_completion _CreateSSHTunnel "-v --verbose -p --port -P --jump-profile -U --jump-user -H --jump-host -h --help" "CreateSSHTunnel - completes short options" CreateSSHTunnel -
     assert_completion _CreateSSHTunnel "-v --verbose -p --port -P --jump-profile -U --jump-user -H --jump-host -h --help" "CreateSSHTunnel <space> completes options" CreateSSHTunnel ""
     assert_completion _CreateSSHTunnel "-v --verbose -p --port -P --jump-profile -U --jump-user -H --jump-host -h --help" "CreateSSHTunnel <space> after flag completes options" CreateSSHTunnel -v ""
+
+    print_section_header "OpenWithEdge"
+
+    assert_completion _OpenWithEdge "--help --dry-run" "OpenWithEdge -- completes long options" OpenWithEdge --
+    assert_completion _OpenWithEdge "--dry-run" "OpenWithEdge --d filters prefix" OpenWithEdge --d
+    assert_completion _OpenWithEdge "-h --help --dry-run" "OpenWithEdge - completes all options" OpenWithEdge -
+    assert_completion _OpenWithEdge "-h --help --dry-run" "OpenWithEdge <space> completes options" OpenWithEdge ""
 
     print_section_header "SyncToHosts"
 

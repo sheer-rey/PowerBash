@@ -239,3 +239,28 @@ _SyncToHosts() {
     return 0
 }
 complete -F _SyncToHosts SyncToHosts
+
+# ============================================================================
+# OpenWithEdge
+# ============================================================================
+_OpenWithEdge() {
+    local cur prev
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    case "${prev}" in
+        -h|--help)
+            return 0
+            ;;
+    esac
+
+    if [[ "${cur}" == -* || -z "${cur}" ]]; then
+        COMPREPLY=( $(compgen -W "-h --help --dry-run" -- "${cur}") )
+        return 0
+    fi
+
+    # complete with readable files
+    COMPREPLY=( $(compgen -f -- "${cur}") )
+    return 0
+}
+complete -F _OpenWithEdge OpenWithEdge

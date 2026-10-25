@@ -1,0 +1,157 @@
+#!/bin/bash
+####################################################################################################
+# @file    OpenWithEdge
+# @brief   Open files, paths or URLs with Windows Microsoft Edge browser from WSL.
+#
+# @author  sheer.rey<sheer.rey@gmail.com>
+# @date    10/25/2026
+# @version 1.0
+####################################################################################################
+script_root="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+# load predefined variables and functions
+if [ -f "${script_root}/../predefined" ]; then
+    source "${script_root}/../predefined"
+else
+    echo "Error: predefined file not found in ${script_root}!" 1>&2
+    exit 1
+fi
+
+# checkout if running inside WSL, launching Windows Edge requires WSL interop
+if [ -z "${WSL_DISTRO_NAME:-}" ] && ! grep -qi microsoft /proc/version 2>/dev/null; then
+    PrintError "OpenWithEdge only works inside a WSL environment!"
+    exit 1
+fi
+
+# Function to print help message
+function PrintHelp {
+    cat <<EOF
+Used for opening files, paths or URLs with the Windows Microsoft Edge browser from WSL.
+Usage: $(basename "${BASH_SOURCE[0]}") [OPTIONS] [FILE|PATH|URL] ...
+
+Options:
+  -h, --help            Print this help message and exit.
+      --dry-run         Print the resolved launch command without opening Edge.
+
+Arguments:
+  FILE|PATH|URL         WSL paths, Windows paths, file:// URIs and http(s) URLs are accepted,
+                        local paths are checked for existence before opening.
+                        With no arguments specified, the Edge start page is opened.
+
+Note: This tool only works inside a WSL environment.
+EOF
+}
+
+function PrintHelpCompatible {
+    cat <<EOF
+Used for opening files, paths or URLs with the Windows Microsoft Edge browser from WSL.
+Usage: $(basename "${BASH_SOURCE[0]}") [OPTIONS] [FILE|PATH|URL] ...
+
+Options:
+  -h                Print this help message and exit.
+
+Arguments:
+  FILE|PATH|URL     WSL paths, Windows paths, file:// URIs and http(s) URLs are accepted,
+                    local paths are checked for existence before opening.
+                    With no arguments specified, the Edge start page is opened.
+
+Note: This tool only works inside a WSL environment.
+EOF
+}
+
+# definition of common options
+dry_run=false          # whether to print resolved command without launching Edge
+
+# parse command line options with getopts
+sopt='h'
+lopt='help,dry-run'
+if ! ParseArguments "$(basename "${BASH_SOURCE[0]}")" $sopt $lopt "$@"; then exit 1; fi
+PrintDebug "Parsed arguments: $parsed_args"
+eval set -- "$parsed_args"
+
+## iterate options
+while true; do
+    case "$1" in
+        -h|--help)
+            if [ $getopt_version = "enhanced" ]; then
+                PrintHelp
+            elif [ $getopt_version = "compatible" ]; then
+                PrintHelpCompatible
+            else
+                PrintError "unrecognized getopt version string($getopt_version)!"
+                exit 1
+            fi
+            exit 0
+            ;;
+        --dry-run)
+            dry_run=true
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            PrintError "unrecognized option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+# locate msedge.exe on the Windows side, probing all automounted drives with /mnt/c fallback
+# (older WSL mounts drives with fs type 'drvfs', newer ones use '9p' with 'aname=drvfs' option)
+msedge=""
+for drive in $(awk '$3 == "drvfs" || ($3 == "9p" && $4 ~ /aname=drvfs/) { print $2 }' /proc/mounts) /mnt/c; do  # shellcheck disable=SC2046
+    for progfiles in "${drive}/Program Files (x86)" "${drive}/Program Files"; do
+        if [ -x "${progfiles}/Microsoft/Edge/Application/msedge.exe" ]; then
+            msedge="${progfiles}/Microsoft/Edge/Application/msedge.exe"
+            break 2
+        fi
+    done
+done
+if [ -z "$msedge" ]; then
+    PrintError "no msedge.exe found, is Microsoft Edge installed on the Windows side?"
+    exit 1
+fi
+
+# convert each target argument to a form msedge.exe understands
+# - WSL paths are translated to Windows paths via `wslpath -m`, so the distro name
+#   (WSL_DISTRO_NAME) is picked up automatically for wsl.localhost UNC paths
+# - Windows paths, UNC paths, `file://` URIs and http(s) URLs are opened directly
+targets=()
+for arg in "$@"; do
+    target=""
+    case "$arg" in
+        file://*|http://*|https://*)
+            target="$arg" ;;
+        \\\\wsl.localhost\\*|//wsl.localhost/*)
+            # UNC network paths are passed through as-is
+            target="$arg" ;;
+        [A-Za-z]:[\\/]*)  # Windows path (C:\... or C:/...)
+            wsl_arg=$(wslpath -u "$arg" 2>/dev/null) || { PrintError "invalid Windows path '%s'!" "$arg"; exit 1; }
+            [ -e "$wsl_arg" ] || { PrintError "path '%s' does not exist!" "$arg"; exit 1; }
+            target="file://$(wslpath -m "$wsl_arg")" ;;
+        /*)  # absolute WSL path
+            [ -e "$arg" ] || { PrintError "path '%s' does not exist!" "$arg"; exit 1; }
+            target="file://$(wslpath -m "$arg")" ;;
+        *)  # treat as a WSL relative path (resolve first)
+            [ -e "$arg" ] || { PrintError "path '%s' does not exist!" "$arg"; exit 1; }
+            target="file://$(wslpath -m "$(realpath "$arg")")" ;;
+    esac
+    targets+=("$target")
+done
+
+# dry-run mode: print the resolved launch command without opening Edge
+if [ "$dry_run" = true ]; then
+    PrintInfo "Dry-run mode, Edge will not be launched, resolved command:"
+    if [ ${#targets[@]} -eq 0 ]; then
+        echo "  ${msedge}"
+    else
+        echo "  ${msedge} ${targets[*]}"
+    fi
+    exit 0
+fi
+
+# launch Edge detached from the terminal, multiple targets are opened as separate tabs
+PrintDebug "Launch command: ${msedge} ${targets[*]}"
+( set +m; "${msedge}" "${targets[@]}" >/dev/null 2>&1 </dev/null & )

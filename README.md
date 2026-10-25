@@ -35,7 +35,7 @@ for convenience, clarity, and efficiency.
   - Enables programmable completion if available.
 - **Bash Completion:**  
   - Provides tab completion for the exported functions (`osc_yank`, `fix_owner`) and nicetools
-    scripts (`ArchivetoRDN`, `CreateSSHTunnel`, `SyncToHosts`).
+    scripts (`ArchivetoRDN`, `CreateSSHTunnel`, `SyncToHosts`, `OpenWithEdge`).
   - Completions are loaded automatically from `~/.nicetools/completions/powerbash-completions.bash`.
 
 ### 🛠️ User-Scoped Git Configuration
@@ -146,6 +146,13 @@ for convenience, clarity, and efficiency.
   - Create an SSH tunnel to a remote server, optionally through a jump host.
   - Supports SSH config profiles (`-P`), jump user/host, local port, and verbose output.
 
+- **`OpenWithEdge`:**  
+  - Open files, paths or URLs with the Windows Microsoft Edge browser from WSL.
+  - WSL/Windows local paths are translated to `file://` URIs via `wslpath`; `http(s)://` URLs pass through.
+  - Multiple targets are opened as separate tabs; with no arguments the Edge start page is opened.
+  - Supports `--dry-run` to preview the resolved launch command without opening Edge.
+  - Only works inside WSL; exits with an error on non-WSL environments.
+
 - **Multi-Host Synchronization (SyncToHosts):**  
   - **Universal Multi-Host Sync Tool:** A powerful script for synchronizing files/directories to multiple remote hosts simultaneously.
   - **Parallel Sync by Default:** Auto-detects concurrency based on CPU cores and host count (configurable via `-j`/`--jobs`).
@@ -172,7 +179,8 @@ for convenience, clarity, and efficiency.
 - **Location:** `tests/` directory contains test infrastructure and component-specific tests.
 - **Running Tests:** `bash tests/run_tests.sh` - runs all tests and produces detailed output.
 - **Features Tested:** Host resolution, parallel/serial modes, concurrency control, argument validation, and more.
-- **Components:** `sync-to-hosts` and `completions` (bash completion bindings and option completion).
+- **Components:** `sync-to-hosts`, `completions` (bash completion bindings and option completion)
+  and `open-with-edge` (WSL gate and target resolution via `--dry-run`).
 
 > **Quoting reminder:** Arguments to `SyncToHosts` that contain shell wildcards (`*`, `?`)
 > must be quoted so the shell does not expand them into local filenames before the script

@@ -22,6 +22,7 @@ tests/
 # Run a specific component
 ./tests/run_tests.sh sync-to-hosts
 ./tests/run_tests.sh completions
+./tests/run_tests.sh open-with-edge
 ```
 
 ## How to add new tests
