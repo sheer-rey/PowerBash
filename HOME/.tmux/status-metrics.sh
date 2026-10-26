@@ -51,13 +51,13 @@ slow_ttl=20
 # severity colour knobs: xterm 256-colour indices (0-255) tinting the bars and
 # values below; 40/208/160 are a bright green/orange/red trio that stays
 # readable on the light status background — change freely to taste
-colour_ok=40      # healthy: <70%, LOAD < 0.7x cores
-colour_warn=208   # busy:    70-89%, LOAD 0.7-1x cores
+colour_ok=35      # healthy: <70%, LOAD < 0.7x cores
+colour_warn=202   # busy:    70-89%, LOAD 0.7-1x cores
 colour_crit=160   # high:    >=90%, LOAD >= 1x cores
 
 # segment colour knobs for the non-metric segments, same 0-255 index space
-colour_up=141     # UP (uptime) value
-colour_date=81    # date / time string
+colour_up=165     # UP (uptime) value
+colour_date=63    # date / time string
 
 # segment icon knobs: colour emoji rendered by the terminal's colour-emoji
 # font; an empty icon hides that segment's icon AND its trailing space (clear
